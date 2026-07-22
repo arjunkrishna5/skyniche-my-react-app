@@ -4,6 +4,7 @@ import ViteLanding from './components/ViteLanding';
 import Login from './components/Login';
 import Dashboard from './components/Dashboard';
 import Storefront from './components/Storefront';
+import CustomerAccount from './components/CustomerAccount';
 import { useAuth } from './contents/AuthContext';
 
 const ProtectedRoute = ({ children }) => {
@@ -27,6 +28,24 @@ function App() {
         <Route 
           path="/shop" 
           element={<Storefront />} 
+        />
+
+        {/* Customer Account & Orders */}
+        <Route 
+          path="/my-orders" 
+          element={
+            <ProtectedRoute>
+              <CustomerAccount />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/profile" 
+          element={
+            <ProtectedRoute>
+              <CustomerAccount />
+            </ProtectedRoute>
+          } 
         />
 
         {/* Public Login Route */}

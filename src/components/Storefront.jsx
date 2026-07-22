@@ -3,7 +3,6 @@ import {
   Box,
   Typography,
   Paper,
-  Grid,
   Button,
   IconButton,
   Badge,
@@ -23,6 +22,11 @@ import {
   Delete as DeleteIcon,
   ArrowForward as ArrowForwardIcon,
   Storefront as StorefrontIcon,
+  Laptop as LaptopIcon,
+  PhoneIphone as PhoneIcon,
+  Headphones as HeadphonesIcon,
+  Spa as SkincareIcon,
+  Devices as GadgetIcon,
 } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import { useSnackbar } from "notistack";
@@ -36,10 +40,10 @@ const INITIAL_PRODUCTS = [
     price: 2499.0,
     rating: 4.9,
     reviews: 342,
-    image: "https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=600&auto=format&fit=crop&q=80",
     desc: "Apple M3 Max chip, 36GB unified memory, Liquid Retina XDR display, and all-day battery life.",
     badge: "Top Seller",
     badgeColor: "#2dd4bf",
+    icon: <LaptopIcon sx={{ fontSize: 32, color: "#2dd4bf" }} />,
   },
   {
     id: "PROD-102",
@@ -48,10 +52,10 @@ const INITIAL_PRODUCTS = [
     price: 1199.0,
     rating: 4.8,
     reviews: 512,
-    image: "https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=600&auto=format&fit=crop&q=80",
     desc: "Forged in titanium, A17 Pro chip, customizable Action button, and 5x optical zoom camera system.",
     badge: "Popular",
     badgeColor: "#6366f1",
+    icon: <PhoneIcon sx={{ fontSize: 32, color: "#6366f1" }} />,
   },
   {
     id: "PROD-103",
@@ -60,10 +64,10 @@ const INITIAL_PRODUCTS = [
     price: 399.0,
     rating: 4.9,
     reviews: 289,
-    image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=600&auto=format&fit=crop&q=80",
     desc: "Industry-leading noise canceling with 2 processors, 8 microphones, and crystal-clear hands-free calling.",
     badge: "Noise Cancelling",
     badgeColor: "#c084fc",
+    icon: <HeadphonesIcon sx={{ fontSize: 32, color: "#c084fc" }} />,
   },
   {
     id: "PROD-104",
@@ -72,10 +76,10 @@ const INITIAL_PRODUCTS = [
     price: 28.0,
     rating: 4.7,
     reviews: 184,
-    image: "https://images.unsplash.com/photo-1598440947619-2c35fc9aa908?w=600&auto=format&fit=crop&q=80",
     desc: "Broad spectrum UVA/UVB protection enriched with hyaluronic acid and niacinamide for daily glow.",
     badge: "Skin Shield",
     badgeColor: "#fbbf24",
+    icon: <SkincareIcon sx={{ fontSize: 32, color: "#fbbf24" }} />,
   },
   {
     id: "PROD-105",
@@ -84,10 +88,10 @@ const INITIAL_PRODUCTS = [
     price: 429.0,
     rating: 4.8,
     reviews: 195,
-    image: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&auto=format&fit=crop&q=80",
     desc: "Advanced health sensors, ECG app, Always-On Retina display, and precision GPS workout tracking.",
     badge: "Fitness Tech",
     badgeColor: "#38bdf8",
+    icon: <GadgetIcon sx={{ fontSize: 32, color: "#38bdf8" }} />,
   },
   {
     id: "PROD-106",
@@ -96,10 +100,10 @@ const INITIAL_PRODUCTS = [
     price: 34.5,
     rating: 4.9,
     reviews: 142,
-    image: "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?w=600&auto=format&fit=crop&q=80",
     desc: "Potent 15% Pure Vitamin C antioxidant formula that brightens dark spots and boosts collagen synthesis.",
     badge: "Trending",
     badgeColor: "#ec4899",
+    icon: <SkincareIcon sx={{ fontSize: 32, color: "#ec4899" }} />,
   },
 ];
 
@@ -284,23 +288,37 @@ export default function Storefront() {
               </IconButton>
 
               {isAuthenticated ? (
-                <Button
-                  variant="outlined"
-                  onClick={() => navigate("/dashboard")}
-                  sx={{
-                    color: "#2dd4bf",
-                    borderColor: "rgba(45, 212, 191, 0.3)",
-                    borderRadius: "10px",
-                    fontWeight: 700,
-                    textTransform: "none",
-                    "&:hover": {
-                      borderColor: "#2dd4bf",
-                      backgroundColor: "rgba(45, 212, 191, 0.05)",
-                    },
-                  }}
-                >
-                  Dashboard
-                </Button>
+                <Box display="flex" gap={1.5}>
+                  <Button
+                    variant="text"
+                    onClick={() => navigate("/my-orders")}
+                    sx={{
+                      color: "#94a3b8",
+                      fontWeight: 700,
+                      textTransform: "none",
+                      "&:hover": { color: "#2dd4bf" },
+                    }}
+                  >
+                    My Orders
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    onClick={() => navigate("/dashboard")}
+                    sx={{
+                      color: "#2dd4bf",
+                      borderColor: "rgba(45, 212, 191, 0.3)",
+                      borderRadius: "10px",
+                      fontWeight: 700,
+                      textTransform: "none",
+                      "&:hover": {
+                        borderColor: "#2dd4bf",
+                        backgroundColor: "rgba(45, 212, 191, 0.05)",
+                      },
+                    }}
+                  >
+                    Dashboard
+                  </Button>
+                </Box>
               ) : (
                 <Button
                   variant="contained"
@@ -406,145 +424,158 @@ export default function Storefront() {
           ))}
         </Box>
 
-        {/* Product Cards Grid - Perfectly Aligned */}
-        <Grid container spacing={3.5} alignItems="stretch">
+        {/* Responsive 3-Column CSS Grid */}
+        <Box
+          sx={{
+            display: "grid",
+            gridTemplateColumns: { xs: "1fr", sm: "repeat(2, 1fr)", md: "repeat(3, 1fr)" },
+            gap: 3.5,
+          }}
+        >
           {filteredProducts.map((product) => (
-            <Grid item xs={12} sm={6} md={4} key={product.id} sx={{ display: "flex" }}>
-              <Paper
+            <Paper
+              key={product.id}
+              sx={{
+                borderRadius: "20px",
+                backgroundColor: "rgba(15, 23, 42, 0.5)",
+                border: "1px solid rgba(255, 255, 255, 0.08)",
+                overflow: "hidden",
+                display: "flex",
+                flexDirection: "column",
+                transition: "transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease",
+                "&:hover": {
+                  transform: "translateY(-6px)",
+                  borderColor: "rgba(45, 212, 191, 0.3)",
+                  boxShadow:
+                    "0 20px 40px -15px rgba(0,0,0,0.7), 0 0 30px rgba(45, 212, 191, 0.1)",
+                },
+              }}
+            >
+              {/* Product Header Icon Box (No Images Needed!) */}
+              <Box
                 sx={{
-                  width: "100%",
-                  borderRadius: "20px",
-                  backgroundColor: "rgba(15, 23, 42, 0.5)",
-                  border: "1px solid rgba(255, 255, 255, 0.08)",
-                  overflow: "hidden",
+                  p: 3,
+                  pb: 2,
                   display: "flex",
-                  flexDirection: "column",
-                  transition: "transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease",
-                  "&:hover": {
-                    transform: "translateY(-6px)",
-                    borderColor: "rgba(45, 212, 191, 0.3)",
-                    boxShadow:
-                      "0 20px 40px -15px rgba(0,0,0,0.7), 0 0 30px rgba(45, 212, 191, 0.1)",
-                  },
+                  justifyContent: "space-between",
+                  alignItems: "flex-start",
+                  backgroundColor: "rgba(255, 255, 255, 0.015)",
+                  borderBottom: "1px solid rgba(255, 255, 255, 0.04)",
                 }}
               >
-                {/* Product Cover Image Container */}
-                <Box sx={{ position: "relative", height: "220px", overflow: "hidden", backgroundColor: "#020617" }}>
-                  <Box
-                    component="img"
-                    src={product.image}
-                    alt={product.name}
-                    sx={{
-                      width: "100%",
-                      height: "100%",
-                      objectFit: "cover",
-                      transition: "transform 0.5s ease",
-                      "&:hover": { transform: "scale(1.06)" },
-                    }}
-                  />
-                  <Chip
-                    label={product.badge}
-                    size="small"
-                    sx={{
-                      position: "absolute",
-                      top: 12,
-                      left: 12,
-                      backgroundColor: product.badgeColor,
-                      color: "#090d16",
-                      fontWeight: 800,
-                      fontSize: "0.75rem",
-                    }}
-                  />
+                <Box
+                  sx={{
+                    p: 1.5,
+                    borderRadius: "14px",
+                    backgroundColor: "rgba(255, 255, 255, 0.03)",
+                    border: "1px solid rgba(255, 255, 255, 0.06)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  {product.icon || <LaptopIcon sx={{ fontSize: 32, color: "#2dd4bf" }} />}
                 </Box>
 
-                {/* Card Body - Equalized Layout */}
-                <Box sx={{ p: 3, display: "flex", flexDirection: "column", flexGrow: 1 }}>
-                  {/* Category & Ratings Header */}
-                  <Box display="flex" justifyContent="space-between" alignItems="center" mb={1.5}>
-                    <Typography variant="caption" color="#64748b" fontWeight={700} sx={{ textTransform: "uppercase", letterSpacing: "0.5px" }}>
-                      {product.category}
-                    </Typography>
-                    <Box display="flex" alignItems="center" gap={0.5}>
-                      <StarIcon sx={{ color: "#fbbf24", fontSize: 16 }} />
-                      <Typography variant="caption" color="white" fontWeight={700}>
-                        {product.rating} ({product.reviews})
-                      </Typography>
-                    </Box>
-                  </Box>
+                <Chip
+                  label={product.badge}
+                  size="small"
+                  sx={{
+                    backgroundColor: product.badgeColor,
+                    color: "#090d16",
+                    fontWeight: 800,
+                    fontSize: "0.75rem",
+                  }}
+                />
+              </Box>
 
-                  {/* Fixed Height Title */}
-                  <Typography
-                    variant="h6"
-                    fontWeight={800}
-                    color="white"
-                    mb={1}
-                    sx={{
-                      fontSize: "1.05rem",
-                      lineHeight: 1.3,
-                      minHeight: "44px",
-                      display: "-webkit-box",
-                      WebkitLineClamp: 2,
-                      WebkitBoxOrient: "vertical",
-                      overflow: "hidden",
-                    }}
-                  >
-                    {product.name}
+              {/* Card Body - Equalized Layout */}
+              <Box sx={{ p: 3, display: "flex", flexDirection: "column", flexGrow: 1 }}>
+                {/* Category & Ratings Header */}
+                <Box display="flex" justifyContent="space-between" alignItems="center" mb={1.5}>
+                  <Typography variant="caption" color="#64748b" fontWeight={700} sx={{ textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                    {product.category}
                   </Typography>
-
-                  {/* Fixed Height Description */}
-                  <Typography
-                    variant="body2"
-                    color="#94a3b8"
-                    mb={3}
-                    sx={{
-                      fontSize: "0.85rem",
-                      lineHeight: 1.5,
-                      minHeight: "38px",
-                      display: "-webkit-box",
-                      WebkitLineClamp: 2,
-                      WebkitBoxOrient: "vertical",
-                      overflow: "hidden",
-                      flexGrow: 1,
-                    }}
-                  >
-                    {product.desc}
-                  </Typography>
-
-                  <Divider sx={{ mb: 2.5, borderColor: "rgba(255, 255, 255, 0.06)" }} />
-
-                  {/* Bottom Footer Price & Button */}
-                  <Box display="flex" justifyContent="space-between" alignItems="center">
-                    <Typography variant="h5" fontWeight={900} color="#2dd4bf">
-                      ${product.price.toFixed(2)}
+                  <Box display="flex" alignItems="center" gap={0.5}>
+                    <StarIcon sx={{ color: "#fbbf24", fontSize: 16 }} />
+                    <Typography variant="caption" color="white" fontWeight={700}>
+                      {product.rating} ({product.reviews})
                     </Typography>
-
-                    <Button
-                      variant="contained"
-                      startIcon={<ShoppingCartIcon />}
-                      onClick={() => handleAddToCart(product)}
-                      sx={{
-                        backgroundColor: "rgba(45, 212, 191, 0.15)",
-                        color: "#2dd4bf",
-                        border: "1px solid rgba(45, 212, 191, 0.3)",
-                        fontWeight: 700,
-                        textTransform: "none",
-                        borderRadius: "10px",
-                        px: 2,
-                        py: 0.8,
-                        "&:hover": {
-                          backgroundColor: "#2dd4bf",
-                          color: "#090d16",
-                        },
-                      }}
-                    >
-                      Add to Cart
-                    </Button>
                   </Box>
                 </Box>
-              </Paper>
-            </Grid>
+
+                {/* Fixed Height Title */}
+                <Typography
+                  variant="h6"
+                  fontWeight={800}
+                  color="white"
+                  mb={1}
+                  sx={{
+                    fontSize: "1.05rem",
+                    lineHeight: 1.3,
+                    minHeight: "44px",
+                    display: "-webkit-box",
+                    WebkitLineClamp: 2,
+                    WebkitBoxOrient: "vertical",
+                    overflow: "hidden",
+                  }}
+                >
+                  {product.name}
+                </Typography>
+
+                {/* Fixed Height Description */}
+                <Typography
+                  variant="body2"
+                  color="#94a3b8"
+                  mb={3}
+                  sx={{
+                    fontSize: "0.85rem",
+                    lineHeight: 1.5,
+                    minHeight: "38px",
+                    display: "-webkit-box",
+                    WebkitLineClamp: 2,
+                    WebkitBoxOrient: "vertical",
+                    overflow: "hidden",
+                    flexGrow: 1,
+                  }}
+                >
+                  {product.desc}
+                </Typography>
+
+                <Divider sx={{ mb: 2.5, borderColor: "rgba(255, 255, 255, 0.06)" }} />
+
+                {/* Bottom Footer Price & Button */}
+                <Box display="flex" justifyContent="space-between" alignItems="center">
+                  <Typography variant="h5" fontWeight={900} color="#2dd4bf">
+                    ${product.price.toFixed(2)}
+                  </Typography>
+
+                  <Button
+                    variant="contained"
+                    startIcon={<ShoppingCartIcon />}
+                    onClick={() => handleAddToCart(product)}
+                    sx={{
+                      backgroundColor: "rgba(45, 212, 191, 0.15)",
+                      color: "#2dd4bf",
+                      border: "1px solid rgba(45, 212, 191, 0.3)",
+                      fontWeight: 700,
+                      textTransform: "none",
+                      borderRadius: "10px",
+                      px: 2,
+                      py: 0.8,
+                      "&:hover": {
+                        backgroundColor: "#2dd4bf",
+                        color: "#090d16",
+                      },
+                    }}
+                  >
+                    Add to Cart
+                  </Button>
+                </Box>
+              </Box>
+            </Paper>
           ))}
-        </Grid>
+        </Box>
       </Container>
 
       {/* Cart Side Drawer */}

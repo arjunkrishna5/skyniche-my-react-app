@@ -1,0 +1,462 @@
+import React, { useState } from "react";
+import {
+  Box,
+  Typography,
+  Paper,
+  Grid,
+  Button,
+  Avatar,
+  Container,
+  Tabs,
+  Tab,
+  TextField,
+  Divider,
+  Chip,
+  Stepper,
+  Step,
+  StepLabel,
+} from "@mui/material";
+import {
+  ShoppingBag as ShoppingBagIcon,
+  Person as PersonIcon,
+  Storefront as StorefrontIcon,
+  LocalShipping as LocalShippingIcon,
+  CheckCircle as CheckCircleIcon,
+  ArrowBack as ArrowBackIcon,
+  Save as SaveIcon,
+} from "@mui/icons-material";
+import { useNavigate } from "react-router-dom";
+import { useSnackbar } from "notistack";
+import { useAuth } from "../contents/AuthContext";
+
+const MOCK_CUSTOMER_ORDERS = [
+  {
+    id: "#ORD-9821",
+    date: "Oct 20, 2026",
+    total: "$2,499.00",
+    status: "In Transit",
+    activeStep: 2, // 0: Placed, 1: Packed, 2: In Transit, 3: Delivered
+    items: [
+      {
+        name: 'MacBook Pro 16" M3 Max',
+        qty: 1,
+        price: "$2,499.00",
+        image: "https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=300&auto=format&fit=crop&q=80",
+      },
+    ],
+    trackingNumber: "FDX-901248912",
+    estimatedDelivery: "Tomorrow, Oct 23",
+  },
+  {
+    id: "#ORD-9818",
+    date: "Oct 12, 2026",
+    total: "$427.00",
+    status: "Delivered",
+    activeStep: 3,
+    items: [
+      {
+        name: "Sony WH-1000XM5 Wireless Headphones",
+        qty: 1,
+        price: "$399.00",
+        image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=300&auto=format&fit=crop&q=80",
+      },
+      {
+        name: "Hydrating Glow SPF 50 Sunscreen",
+        qty: 1,
+        price: "$28.00",
+        image: "https://images.unsplash.com/photo-1598440947619-2c35fc9aa908?w=300&auto=format&fit=crop&q=80",
+      },
+    ],
+    trackingNumber: "FDX-882104921",
+    estimatedDelivery: "Delivered on Oct 14",
+  },
+];
+
+const ORDER_STEPS = ["Order Placed", "Packed", "In Transit", "Delivered"];
+
+export default function CustomerAccount() {
+  const navigate = useNavigate();
+  const { enqueueSnackbar } = useSnackbar();
+  const { user } = useAuth();
+
+  const [activeTab, setActiveTab] = useState(0);
+
+  // Profile Form State
+  const [profileData, setProfileData] = useState({
+    name: user?.name || "Sarah Jenkins",
+    email: user?.email || "sarah.j@example.com",
+    phone: "+1 (555) 234-5678",
+    address: "742 Evergreen Terrace",
+    city: "Springfield",
+    zip: "97477",
+  });
+
+  const handleSaveProfile = () => {
+    enqueueSnackbar("Profile & Shipping Address saved successfully!", {
+      variant: "success",
+    });
+  };
+
+  return (
+    <Box
+      sx={{
+        minHeight: "100vh",
+        backgroundColor: "#090d16",
+        color: "white",
+        position: "relative",
+        pb: 8,
+      }}
+    >
+      {/* Top Navbar */}
+      <Paper
+        square
+        elevation={0}
+        sx={{
+          backgroundColor: "rgba(15, 23, 42, 0.7)",
+          backdropFilter: "blur(20px)",
+          borderBottom: "1px solid rgba(255, 255, 255, 0.08)",
+          position: "sticky",
+          top: 0,
+          zIndex: 10,
+        }}
+      >
+        <Container maxWidth="lg">
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              py: 2,
+            }}
+          >
+            <Button
+              startIcon={<ArrowBackIcon />}
+              onClick={() => navigate("/shop")}
+              sx={{
+                color: "#2dd4bf",
+                textTransform: "none",
+                fontWeight: 700,
+                fontSize: "0.95rem",
+                "&:hover": { backgroundColor: "rgba(45, 212, 191, 0.08)" },
+              }}
+            >
+              Back to Storefront
+            </Button>
+
+            <Box display="flex" alignItems="center" gap={1.5}>
+              <Avatar
+                sx={{
+                  width: 38,
+                  height: 38,
+                  bgcolor: "#2dd4bf",
+                  color: "#090d16",
+                  fontWeight: 800,
+                }}
+              >
+                {(user?.name?.[0] || "S").toUpperCase()}
+              </Avatar>
+              <Box sx={{ display: { xs: "none", sm: "block" } }}>
+                <Typography variant="body2" fontWeight={700} color="white">
+                  {profileData.name}
+                </Typography>
+                <Typography variant="caption" color="#64748b">
+                  {profileData.email}
+                </Typography>
+              </Box>
+            </Box>
+          </Box>
+        </Container>
+      </Paper>
+
+      {/* Main Content Container */}
+      <Container maxWidth="lg" sx={{ pt: 5 }}>
+        {/* Header Title */}
+        <Box mb={4}>
+          <Typography variant="h4" fontWeight={900} color="white" mb={1}>
+            Customer Account Portal
+          </Typography>
+          <Typography variant="body2" color="#94a3b8">
+            Manage your personal purchases, live shipment status, and delivery address.
+          </Typography>
+        </Box>
+
+        {/* Navigation Tabs */}
+        <Paper
+          sx={{
+            borderRadius: "16px",
+            backgroundColor: "rgba(15, 23, 42, 0.5)",
+            border: "1px solid rgba(255, 255, 255, 0.08)",
+            mb: 4,
+            p: 0.5,
+          }}
+        >
+          <Tabs
+            value={activeTab}
+            onChange={(e, val) => setActiveTab(val)}
+            sx={{
+              "& .MuiTabs-indicator": { backgroundColor: "#2dd4bf", height: 3, borderRadius: 2 },
+              "& .MuiTab-root": {
+                color: "#64748b",
+                fontWeight: 700,
+                textTransform: "none",
+                fontSize: "0.95rem",
+                "&.Mui-selected": { color: "#2dd4bf" },
+              },
+            }}
+          >
+            <Tab icon={<ShoppingBagIcon />} iconPosition="start" label="My Orders" />
+            <Tab icon={<PersonIcon />} iconPosition="start" label="Account Profile" />
+          </Tabs>
+        </Paper>
+
+        {/* TAB 0: MY ORDERS */}
+        {activeTab === 0 && (
+          <Box display="flex" flexDirection="column" gap={3.5}>
+            {MOCK_CUSTOMER_ORDERS.map((order) => (
+              <Paper
+                key={order.id}
+                sx={{
+                  p: 3.5,
+                  borderRadius: "20px",
+                  backgroundColor: "rgba(15, 23, 42, 0.4)",
+                  border: "1px solid rgba(255, 255, 255, 0.08)",
+                }}
+              >
+                {/* Order Header */}
+                <Box
+                  display="flex"
+                  justifyContent="space-between"
+                  alignItems="center"
+                  flexWrap="wrap"
+                  gap={2}
+                  mb={3}
+                >
+                  <Box>
+                    <Box display="flex" alignItems="center" gap={1.5} mb={0.5}>
+                      <Typography variant="h6" fontWeight={800} color="white">
+                        {order.id}
+                      </Typography>
+                      <Chip
+                        label={order.status}
+                        size="small"
+                        sx={{
+                          fontWeight: 800,
+                          fontSize: "0.75rem",
+                          backgroundColor:
+                            order.status === "Delivered"
+                              ? "rgba(45, 212, 191, 0.1)"
+                              : "rgba(99, 102, 241, 0.1)",
+                          color:
+                            order.status === "Delivered" ? "#2dd4bf" : "#6366f1",
+                          border:
+                            order.status === "Delivered"
+                              ? "1px solid rgba(45, 212, 191, 0.3)"
+                              : "1px solid rgba(99, 102, 241, 0.3)",
+                        }}
+                      />
+                    </Box>
+                    <Typography variant="caption" color="#64748b">
+                      Placed on {order.date} • Tracking: {order.trackingNumber}
+                    </Typography>
+                  </Box>
+
+                  <Typography variant="h5" fontWeight={900} color="#2dd4bf">
+                    {order.total}
+                  </Typography>
+                </Box>
+
+                {/* Progress Stepper */}
+                <Box sx={{ mb: 4, px: { xs: 0, sm: 2 } }}>
+                  <Stepper activeStep={order.activeStep} alternativeLabel>
+                    {ORDER_STEPS.map((label) => (
+                      <Step key={label}>
+                        <StepLabel
+                          StepIconProps={{
+                            sx: {
+                              "&.Mui-active": { color: "#2dd4bf" },
+                              "&.Mui-completed": { color: "#2dd4bf" },
+                            },
+                          }}
+                        >
+                          <Typography variant="caption" fontWeight={700} color="#94a3b8">
+                            {label}
+                          </Typography>
+                        </StepLabel>
+                      </Step>
+                    ))}
+                  </Stepper>
+                </Box>
+
+                <Divider sx={{ mb: 3, borderColor: "rgba(255, 255, 255, 0.06)" }} />
+
+                {/* Purchased Items List */}
+                <Typography variant="body2" fontWeight={700} color="#64748b" mb={2}>
+                  Items in this order
+                </Typography>
+                <Grid container spacing={2}>
+                  {order.items.map((item, idx) => (
+                    <Grid item xs={12} sm={6} key={idx}>
+                      <Box
+                        display="flex"
+                        alignItems="center"
+                        gap={2}
+                        p={1.5}
+                        sx={{
+                          backgroundColor: "rgba(255, 255, 255, 0.02)",
+                          borderRadius: "12px",
+                          border: "1px solid rgba(255, 255, 255, 0.04)",
+                        }}
+                      >
+                        <Box
+                          component="img"
+                          src={item.image}
+                          alt={item.name}
+                          sx={{
+                            width: 50,
+                            height: 50,
+                            borderRadius: "8px",
+                            objectFit: "cover",
+                          }}
+                        />
+                        <Box>
+                          <Typography variant="body2" fontWeight={700} color="white">
+                            {item.name}
+                          </Typography>
+                          <Typography variant="caption" color="#2dd4bf" fontWeight={700}>
+                            {item.price} (Qty: {item.qty})
+                          </Typography>
+                        </Box>
+                      </Box>
+                    </Grid>
+                  ))}
+                </Grid>
+              </Paper>
+            ))}
+          </Box>
+        )}
+
+        {/* TAB 1: ACCOUNT PROFILE */}
+        {activeTab === 1 && (
+          <Paper
+            sx={{
+              p: 4,
+              borderRadius: "20px",
+              backgroundColor: "rgba(15, 23, 42, 0.4)",
+              border: "1px solid rgba(255, 255, 255, 0.08)",
+            }}
+          >
+            <Typography variant="h6" fontWeight={800} color="white" mb={1}>
+              Personal Details & Shipping Address
+            </Typography>
+            <Typography variant="body2" color="#64748b" mb={4}>
+              Update your contact info and default delivery destination for faster checkout.
+            </Typography>
+
+            <Grid container spacing={3}>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  label="Full Name"
+                  fullWidth
+                  value={profileData.name}
+                  onChange={(e) => setProfileData({ ...profileData, name: e.target.value })}
+                  sx={{
+                    "& .MuiOutlinedInput-root": {
+                      color: "white",
+                      backgroundColor: "rgba(255, 255, 255, 0.02)",
+                      borderRadius: "10px",
+                      "& fieldset": { borderColor: "rgba(255, 255, 255, 0.1)" },
+                      "&.Mui-focused fieldset": { borderColor: "#2dd4bf" },
+                    },
+                    "& .MuiInputLabel-root": { color: "#64748b" },
+                    "& .MuiInputLabel-root.Mui-focused": { color: "#2dd4bf" },
+                  }}
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  label="Email Address"
+                  fullWidth
+                  value={profileData.email}
+                  onChange={(e) => setProfileData({ ...profileData, email: e.target.value })}
+                  sx={{
+                    "& .MuiOutlinedInput-root": {
+                      color: "white",
+                      backgroundColor: "rgba(255, 255, 255, 0.02)",
+                      borderRadius: "10px",
+                      "& fieldset": { borderColor: "rgba(255, 255, 255, 0.1)" },
+                      "&.Mui-focused fieldset": { borderColor: "#2dd4bf" },
+                    },
+                    "& .MuiInputLabel-root": { color: "#64748b" },
+                    "& .MuiInputLabel-root.Mui-focused": { color: "#2dd4bf" },
+                  }}
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  label="Phone Number"
+                  fullWidth
+                  value={profileData.phone}
+                  onChange={(e) => setProfileData({ ...profileData, phone: e.target.value })}
+                  sx={{
+                    "& .MuiOutlinedInput-root": {
+                      color: "white",
+                      backgroundColor: "rgba(255, 255, 255, 0.02)",
+                      borderRadius: "10px",
+                      "& fieldset": { borderColor: "rgba(255, 255, 255, 0.1)" },
+                      "&.Mui-focused fieldset": { borderColor: "#2dd4bf" },
+                    },
+                    "& .MuiInputLabel-root": { color: "#64748b" },
+                    "& .MuiInputLabel-root.Mui-focused": { color: "#2dd4bf" },
+                  }}
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  label="Shipping Street Address"
+                  fullWidth
+                  value={profileData.address}
+                  onChange={(e) => setProfileData({ ...profileData, address: e.target.value })}
+                  sx={{
+                    "& .MuiOutlinedInput-root": {
+                      color: "white",
+                      backgroundColor: "rgba(255, 255, 255, 0.02)",
+                      borderRadius: "10px",
+                      "& fieldset": { borderColor: "rgba(255, 255, 255, 0.1)" },
+                      "&.Mui-focused fieldset": { borderColor: "#2dd4bf" },
+                    },
+                    "& .MuiInputLabel-root": { color: "#64748b" },
+                    "& .MuiInputLabel-root.Mui-focused": { color: "#2dd4bf" },
+                  }}
+                />
+              </Grid>
+            </Grid>
+
+            <Box display="flex" justifyContent="flex-end" mt={4}>
+              <Button
+                variant="contained"
+                startIcon={<SaveIcon />}
+                onClick={handleSaveProfile}
+                sx={{
+                  backgroundColor: "#2dd4bf",
+                  color: "#090d16",
+                  fontWeight: 800,
+                  px: 3,
+                  py: 1.2,
+                  borderRadius: "10px",
+                  textTransform: "none",
+                  boxShadow: "0 4px 15px rgba(45, 212, 191, 0.25)",
+                  "&:hover": {
+                    backgroundColor: "#0d9488",
+                    color: "white",
+                  },
+                }}
+              >
+                Save Changes
+              </Button>
+            </Box>
+          </Paper>
+        )}
+      </Container>
+    </Box>
+  );
+}

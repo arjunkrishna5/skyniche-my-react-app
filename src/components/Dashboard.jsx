@@ -1523,7 +1523,28 @@ export default function DashboardLayoutBasic() {
         }}
         slots={{
           toolbarActions: () => (
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+              <Button
+                variant="outlined"
+                onClick={() => navigate("/shop")}
+                sx={{
+                  color: "#2dd4bf",
+                  borderColor: "rgba(45, 212, 191, 0.3)",
+                  borderRadius: "10px",
+                  fontWeight: 700,
+                  fontSize: "0.8rem",
+                  textTransform: "none",
+                  py: 0.5,
+                  px: 1.5,
+                  "&:hover": {
+                    borderColor: "#2dd4bf",
+                    backgroundColor: "rgba(45, 212, 191, 0.08)",
+                  },
+                }}
+              >
+                View Storefront ↗
+              </Button>
+
               <Tooltip title="User Account">
                 <IconButton onClick={handleOpenUserMenu} sx={{ p: 0.5 }}>
                   <Avatar
