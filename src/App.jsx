@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import ViteLanding from './components/ViteLanding';
 import Login from './components/Login';
 import Dashboard from './components/Dashboard';
+import Storefront from './components/Storefront';
 import { useAuth } from './contents/AuthContext';
 
 const ProtectedRoute = ({ children }) => {
@@ -22,13 +23,19 @@ function App() {
           element={<ViteLanding />} 
         />
 
+        {/* Public Customer Storefront */}
+        <Route 
+          path="/shop" 
+          element={<Storefront />} 
+        />
+
         {/* Public Login Route */}
         <Route 
           path="/login" 
           element={!isAuthenticated ? <Login /> : <Navigate to="/dashboard" replace />} 
         />
         
-        {/* Protected Route */}
+        {/* Protected Dashboard Route */}
         <Route 
           path="/dashboard" 
           element={
@@ -38,10 +45,10 @@ function App() {
           } 
         />
 
-        {/* Fallback redirection to homepage */}
+        {/* Fallback redirection to storefront */}
         <Route 
           path="*" 
-          element={<Navigate to="/" replace />} 
+          element={<Navigate to="/shop" replace />} 
         />
       </Routes>
     </Router>

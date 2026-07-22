@@ -23,10 +23,11 @@ function ViteLanding() {
       boxSizing: "border-box",
       position: "relative"
     }}>
-      {/* Navigation Header with Sign In Button */}
+      {/* Navigation Header with Browse Store & Sign In Buttons */}
       <header style={{
         display: "flex",
         justifyContent: "flex-end",
+        gap: "12px",
         padding: "20px 40px",
         position: "absolute",
         width: "100%",
@@ -36,6 +37,25 @@ function ViteLanding() {
         right: 0,
         zIndex: 10
       }}>
+        <button
+          onClick={() => navigate('/shop')}
+          style={{
+            padding: "10px 20px",
+            backgroundColor: "rgba(45, 212, 191, 0.15)",
+            color: "#2dd4bf",
+            border: "1px solid rgba(45, 212, 191, 0.4)",
+            borderRadius: "6px",
+            fontSize: "1rem",
+            fontWeight: "bold",
+            cursor: "pointer",
+            transition: "all 0.2s"
+          }}
+          onMouseOver={(e) => e.target.style.backgroundColor = "rgba(45, 212, 191, 0.3)"}
+          onMouseOut={(e) => e.target.style.backgroundColor = "rgba(45, 212, 191, 0.15)"}
+        >
+          Browse Store
+        </button>
+
         <button
           onClick={() => navigate('/login')}
           style={{

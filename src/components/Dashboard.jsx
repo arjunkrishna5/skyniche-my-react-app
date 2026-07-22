@@ -462,16 +462,17 @@ function ProductsManagement() {
   const [openModal, setOpenModal] = useState(false);
 
   const [products, setProducts] = useState([
-    { id: "PROD-101", name: "SaaS Pro Plan License", category: "Software", price: "$89.50", stock: 45, status: "In Stock" },
-    { id: "PROD-102", name: "3D Motion Design Asset Pack", category: "3D Assets", price: "$45.00", stock: 8, status: "Low Stock" },
-    { id: "PROD-103", name: "Interactive Web UI Kit", category: "Design Kits", price: "$120.00", stock: 120, status: "In Stock" },
-    { id: "PROD-104", name: "Custom API Integration Service", category: "Services", price: "$299.00", stock: 0, status: "Out of Stock" },
-    { id: "PROD-105", name: "Premium Motion Graphic Template", category: "3D Assets", price: "$65.00", stock: 4, status: "Low Stock" },
+    { id: "PROD-101", name: 'MacBook Pro 16" M3 Max', category: "Electronics", price: "$2,499.00", stock: 18, status: "In Stock" },
+    { id: "PROD-102", name: "iPhone 15 Pro Max 256GB", category: "Electronics", price: "$1,199.00", stock: 24, status: "In Stock" },
+    { id: "PROD-103", name: "Sony WH-1000XM5 Wireless Headphones", category: "Gadgets", price: "$399.00", stock: 5, status: "Low Stock" },
+    { id: "PROD-104", name: "Hydrating Glow SPF 50 Sunscreen", category: "Skincare", price: "$28.00", stock: 140, status: "In Stock" },
+    { id: "PROD-105", name: "Ultra HD Smartwatch Series 9", category: "Gadgets", price: "$429.00", stock: 3, status: "Low Stock" },
+    { id: "PROD-106", name: "Vitamin C Radiance Serum", category: "Skincare", price: "$34.50", stock: 0, status: "Out of Stock" },
   ]);
 
   const [newProduct, setNewProduct] = useState({
     name: "",
-    category: "Software",
+    category: "Electronics",
     price: "",
     stock: "",
   });
@@ -692,10 +693,9 @@ function ProductsManagement() {
                 "&.Mui-focused .MuiOutlinedInput-notchedOutline": { borderColor: "#2dd4bf" },
               }}
             >
-              <MenuItem value="Software">Software</MenuItem>
-              <MenuItem value="3D Assets">3D Assets</MenuItem>
-              <MenuItem value="Design Kits">Design Kits</MenuItem>
-              <MenuItem value="Services">Services</MenuItem>
+              <MenuItem value="Electronics">Electronics</MenuItem>
+              <MenuItem value="Gadgets">Gadgets</MenuItem>
+              <MenuItem value="Skincare">Skincare</MenuItem>
             </Select>
           </FormControl>
 
