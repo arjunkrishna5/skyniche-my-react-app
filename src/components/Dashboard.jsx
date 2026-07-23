@@ -23,7 +23,9 @@ import {
   AdminPanelSettings as AdminIcon,
   Person as CustomerIcon,
   Block as BlockIcon,
+  WarningAmber as WarningIcon,
 } from "@mui/icons-material";
+import { useSnackbar } from "notistack";
 import { AppProvider } from "@toolpad/core/AppProvider";
 import { DashboardLayout } from "@toolpad/core/DashboardLayout";
 import { PageContainer } from "@toolpad/core/PageContainer";
@@ -465,6 +467,8 @@ function ProductsManagement() {
   const [openModal, setOpenModal] = useState(false);
   const [openCategoryModal, setOpenCategoryModal] = useState(false);
   const [newCategoryInput, setNewCategoryInput] = useState("");
+  const [deleteConfirm, setDeleteConfirm] = useState({ open: false, targetId: null, targetName: "" });
+  const { enqueueSnackbar } = useSnackbar();
   const { products, categories, addCategory, addProduct, deleteProduct } = useProducts();
 
   const [newProduct, setNewProduct] = useState({
@@ -499,6 +503,7 @@ function ProductsManagement() {
     if (!newCategoryInput.trim()) return;
     addCategory(newCategoryInput.trim());
     handleCloseCategoryModal();
+    enqueueSnackbar(`Category "${newCategoryInput.trim()}" created!`, { variant: "success", autoHideDuration: 1000 });
   };
 
   const handleAddProduct = () => {
@@ -506,10 +511,19 @@ function ProductsManagement() {
 
     addProduct(newProduct);
     handleCloseModal();
+    enqueueSnackbar(`Product "${newProduct.name}" added successfully!`, { variant: "success", autoHideDuration: 1000 });
   };
 
-  const handleDeleteProduct = (id) => {
-    deleteProduct(id);
+  const promptDeleteProduct = (product) => {
+    setDeleteConfirm({ open: true, targetId: product.id, targetName: product.name });
+  };
+
+  const handleConfirmDeleteProduct = () => {
+    if (deleteConfirm.targetId) {
+      deleteProduct(deleteConfirm.targetId);
+      enqueueSnackbar(`Product "${deleteConfirm.targetName}" deleted successfully.`, { variant: "info", autoHideDuration: 1000 });
+    }
+    setDeleteConfirm({ open: false, targetId: null, targetName: "" });
   };
 
   const getStockBadge = (status) => {
@@ -643,7 +657,7 @@ function ProductsManagement() {
                     <TableCell align="right">
                       <Tooltip title="Delete Product">
                         <IconButton
-                          onClick={() => handleDeleteProduct(prod.id)}
+                          onClick={() => promptDeleteProduct(prod)}
                           sx={{ color: "#64748b", "&:hover": { color: "#f87171" } }}
                         >
                           <DeleteIcon fontSize="small" />
@@ -840,6 +854,54 @@ function ProductsManagement() {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Delete Product Confirmation Dialog Modal */}
+      <Dialog
+        open={deleteConfirm.open}
+        onClose={() => setDeleteConfirm({ open: false, targetId: null, targetName: "" })}
+        PaperProps={{
+          sx: {
+            backgroundColor: "#0f172a",
+            border: "1px solid rgba(248, 113, 113, 0.3)",
+            borderRadius: "16px",
+            color: "white",
+            minWidth: { xs: "90%", sm: "400px" },
+          },
+        }}
+      >
+        <DialogTitle sx={{ fontWeight: 800, color: "#f87171", display: "flex", alignItems: "center", gap: 1.5 }}>
+          <WarningIcon sx={{ color: "#f87171" }} />
+          Delete Product?
+        </DialogTitle>
+        <DialogContent sx={{ pt: 1 }}>
+          <Typography variant="body1" color="#e2e8f0">
+            Are you sure you want to delete product <strong>"{deleteConfirm.targetName}"</strong>? This action cannot be undone.
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ p: 2.5 }}>
+          <Button
+            onClick={() => setDeleteConfirm({ open: false, targetId: null, targetName: "" })}
+            sx={{ color: "#64748b", textTransform: "none", fontWeight: 600 }}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleConfirmDeleteProduct}
+            variant="contained"
+            sx={{
+              backgroundColor: "#f87171",
+              color: "white",
+              fontWeight: 800,
+              textTransform: "none",
+              borderRadius: "10px",
+              px: 3,
+              "&:hover": { backgroundColor: "#dc2626" },
+            }}
+          >
+            Yes, Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }
@@ -848,6 +910,8 @@ function ProductsManagement() {
 function UserManagement() {
   const [search, setSearch] = useState("");
   const [openModal, setOpenModal] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState({ open: false, targetId: null, targetName: "" });
+  const { enqueueSnackbar } = useSnackbar();
   const { registeredUsers, registerUser, deleteUserAccount, toggleUserStatus, toggleUserRole } = useAuth();
 
   const [newUser, setNewUser] = useState({
@@ -876,18 +940,31 @@ function UserManagement() {
     if (!newUser.name || !newUser.email) return;
     registerUser(newUser.name, newUser.email, "123456");
     handleCloseModal();
+    enqueueSnackbar(`User account "${newUser.email}" added!`, { variant: "success", autoHideDuration: 1000 });
   };
 
   const handleToggleRole = (id) => {
     toggleUserRole(id);
+    enqueueSnackbar("User role updated.", { variant: "info", autoHideDuration: 1000 });
   };
 
   const handleToggleStatus = (id) => {
     toggleUserStatus(id);
+    enqueueSnackbar("User account status updated.", { variant: "info", autoHideDuration: 1000 });
   };
 
-  const handleDeleteUser = (id) => {
-    deleteUserAccount(id);
+  const promptDeleteUser = (user) => {
+    const targetId = user.id || user.email;
+    const targetName = user.name || user.email;
+    setDeleteConfirm({ open: true, targetId, targetName });
+  };
+
+  const handleConfirmDeleteUser = () => {
+    if (deleteConfirm.targetId) {
+      deleteUserAccount(deleteConfirm.targetId);
+      enqueueSnackbar(`User account "${deleteConfirm.targetName}" deleted successfully.`, { variant: "info", autoHideDuration: 1000 });
+    }
+    setDeleteConfirm({ open: false, targetId: null, targetName: "" });
   };
 
   return (
@@ -1068,7 +1145,7 @@ function UserManagement() {
 
                           <Tooltip title="Delete Account">
                             <IconButton
-                              onClick={() => handleDeleteUser(targetId)}
+                              onClick={() => promptDeleteUser(user)}
                               sx={{ color: "#64748b", "&:hover": { color: "#f87171" } }}
                             >
                               <DeleteIcon fontSize="small" />
@@ -1183,6 +1260,54 @@ function UserManagement() {
             }}
           >
             Create User
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Delete User Account Confirmation Dialog Modal */}
+      <Dialog
+        open={deleteConfirm.open}
+        onClose={() => setDeleteConfirm({ open: false, targetId: null, targetName: "" })}
+        PaperProps={{
+          sx: {
+            backgroundColor: "#0f172a",
+            border: "1px solid rgba(248, 113, 113, 0.3)",
+            borderRadius: "16px",
+            color: "white",
+            minWidth: { xs: "90%", sm: "400px" },
+          },
+        }}
+      >
+        <DialogTitle sx={{ fontWeight: 800, color: "#f87171", display: "flex", alignItems: "center", gap: 1.5 }}>
+          <WarningIcon sx={{ color: "#f87171" }} />
+          Delete User Account?
+        </DialogTitle>
+        <DialogContent sx={{ pt: 1 }}>
+          <Typography variant="body1" color="#e2e8f0">
+            Are you sure you want to delete user account <strong>"{deleteConfirm.targetName}"</strong>? This action cannot be undone.
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ p: 2.5 }}>
+          <Button
+            onClick={() => setDeleteConfirm({ open: false, targetId: null, targetName: "" })}
+            sx={{ color: "#64748b", textTransform: "none", fontWeight: 600 }}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleConfirmDeleteUser}
+            variant="contained"
+            sx={{
+              backgroundColor: "#f87171",
+              color: "white",
+              fontWeight: 800,
+              textTransform: "none",
+              borderRadius: "10px",
+              px: 3,
+              "&:hover": { backgroundColor: "#dc2626" },
+            }}
+          >
+            Yes, Delete Account
           </Button>
         </DialogActions>
       </Dialog>
