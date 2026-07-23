@@ -7,6 +7,8 @@ const path = require('path')
 const authRoutes = require("./routes/auth");
 const userRoutes = require('./routes/users');
 
+const sequelize = require("./config/dbconnection");
+
 const allowedOrigins = ['http://localhost:5173', 'http://localhost:3000', "http://192.168.1.16:3000", 'http://localhost:3001'];
 
 fastify.register(fastifyCors, {
@@ -49,10 +51,19 @@ userRoutes.forEach((route) => fastify.route(route));
 const PORT = process.env.PORT || 4000;
 
 // Running server
-fastify.listen(PORT, "0.0.0.0", (err) => {
+fastify.listen({ port: PORT, host: "0.0.0.0" }, async (err) => {
   if (err) {
     console.error(err);
     process.exit(1);
   }
   console.log(`Server is running on port ${PORT}`);
+  
+  try {
+    await sequelize.authenticate();
+    console.log("Database connected successfully to MySQL on port 3306!");
+    await sequelize.sync({ alter: true });
+    console.log("MySQL Database Tables synced successfully!");
+  } catch (dbErr) {
+    console.error("Database connection error:", dbErr.message);
+  }
 });

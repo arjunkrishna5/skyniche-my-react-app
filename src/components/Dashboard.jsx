@@ -27,6 +27,8 @@ import {
 import { AppProvider } from "@toolpad/core/AppProvider";
 import { DashboardLayout } from "@toolpad/core/DashboardLayout";
 import { PageContainer } from "@toolpad/core/PageContainer";
+import { useAuth } from "../contents/AuthContext";
+import { useProducts } from "../contents/ProductContext";
 import {
   Box,
   Tooltip,
@@ -55,7 +57,6 @@ import {
   InputLabel,
   Select,
 } from "@mui/material";
-import { useAuth } from "../contents/AuthContext";
 import { useNavigate } from "react-router-dom";
 
 const NAVIGATION = [
@@ -322,24 +323,16 @@ function StatusBadge({ status }) {
 // --- 2. ORDERS SCREEN ---
 function OrdersList() {
   const [search, setSearch] = useState("");
-  
-  const mockOrders = [
-    { id: "#1084", name: "Sarah Jenkins", date: "Today, 05:22 PM", status: "Delivered", amount: "$149.00" },
-    { id: "#1083", name: "Michael Chen", date: "Today, 04:15 PM", status: "Processing", amount: "$89.50" },
-    { id: "#1082", name: "Emily Rodriguez", date: "Yesterday, 11:30 AM", status: "Shipped", amount: "$258.00" },
-    { id: "#1081", name: "David Kim", date: "Yesterday, 09:12 AM", status: "Cancelled", amount: "$45.00" },
-    { id: "#1080", name: "Jessica Taylor", date: "Oct 18, 2026", status: "Delivered", amount: "$120.00" },
-    { id: "#1079", name: "James Wilson", date: "Oct 17, 2026", status: "Delivered", amount: "$310.00" },
-  ];
+  const { orders } = useProducts();
 
   const filteredOrders = useMemo(() => {
-    return mockOrders.filter(
+    return orders.filter(
       (o) =>
-        o.name.toLowerCase().includes(search.toLowerCase()) ||
+        (o.customer || "").toLowerCase().includes(search.toLowerCase()) ||
         o.id.includes(search) ||
         o.status.toLowerCase().includes(search.toLowerCase())
     );
-  }, [search]);
+  }, [orders, search]);
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
@@ -431,13 +424,13 @@ function OrdersList() {
                     }}
                   >
                     <TableCell sx={{ color: "white", fontWeight: 600 }}>{order.id}</TableCell>
-                    <TableCell sx={{ color: "#e2e8f0" }}>{order.name}</TableCell>
+                    <TableCell sx={{ color: "#e2e8f0" }}>{order.customer}</TableCell>
                     <TableCell sx={{ color: "#94a3b8" }}>{order.date}</TableCell>
                     <TableCell>
                       <StatusBadge status={order.status} />
                     </TableCell>
                     <TableCell sx={{ color: "white", fontWeight: 800 }} align="right">
-                      {order.amount}
+                      {order.total}
                     </TableCell>
                   </TableRow>
                 ))
@@ -460,19 +453,13 @@ function OrdersList() {
 function ProductsManagement() {
   const [search, setSearch] = useState("");
   const [openModal, setOpenModal] = useState(false);
-
-  const [products, setProducts] = useState([
-    { id: "PROD-101", name: 'MacBook Pro 16" M3 Max', category: "Electronics", price: "$2,499.00", stock: 18, status: "In Stock" },
-    { id: "PROD-102", name: "iPhone 15 Pro Max 256GB", category: "Electronics", price: "$1,199.00", stock: 24, status: "In Stock" },
-    { id: "PROD-103", name: "Sony WH-1000XM5 Wireless Headphones", category: "Gadgets", price: "$399.00", stock: 5, status: "Low Stock" },
-    { id: "PROD-104", name: "Hydrating Glow SPF 50 Sunscreen", category: "Skincare", price: "$28.00", stock: 140, status: "In Stock" },
-    { id: "PROD-105", name: "Ultra HD Smartwatch Series 9", category: "Gadgets", price: "$429.00", stock: 3, status: "Low Stock" },
-    { id: "PROD-106", name: "Vitamin C Radiance Serum", category: "Skincare", price: "$34.50", stock: 0, status: "Out of Stock" },
-  ]);
+  const [openCategoryModal, setOpenCategoryModal] = useState(false);
+  const [newCategoryInput, setNewCategoryInput] = useState("");
+  const { products, categories, addCategory, addProduct, deleteProduct } = useProducts();
 
   const [newProduct, setNewProduct] = useState({
     name: "",
-    category: "Electronics",
+    category: categories[0] || "Electronics",
     price: "",
     stock: "",
   });
@@ -489,33 +476,30 @@ function ProductsManagement() {
   const handleOpenModal = () => setOpenModal(true);
   const handleCloseModal = () => {
     setOpenModal(false);
-    setNewProduct({ name: "", category: "Software", price: "", stock: "" });
+    setNewProduct({ name: "", category: categories[0] || "Electronics", price: "", stock: "" });
+  };
+
+  const handleOpenCategoryModal = () => setOpenCategoryModal(true);
+  const handleCloseCategoryModal = () => {
+    setOpenCategoryModal(false);
+    setNewCategoryInput("");
+  };
+
+  const handleSaveCategory = () => {
+    if (!newCategoryInput.trim()) return;
+    addCategory(newCategoryInput.trim());
+    handleCloseCategoryModal();
   };
 
   const handleAddProduct = () => {
     if (!newProduct.name || !newProduct.price || !newProduct.stock) return;
 
-    const stockNum = parseInt(newProduct.stock, 10);
-    const formattedPrice = newProduct.price.startsWith("$") ? newProduct.price : `$${newProduct.price}`;
-    let stockStatus = "In Stock";
-    if (stockNum === 0) stockStatus = "Out of Stock";
-    else if (stockNum <= 10) stockStatus = "Low Stock";
-
-    const newItem = {
-      id: `PROD-${Math.floor(100 + Math.random() * 900)}`,
-      name: newProduct.name,
-      category: newProduct.category,
-      price: formattedPrice,
-      stock: stockNum,
-      status: stockStatus,
-    };
-
-    setProducts([newItem, ...products]);
+    addProduct(newProduct);
     handleCloseModal();
   };
 
   const handleDeleteProduct = (id) => {
-    setProducts(products.filter((p) => p.id !== id));
+    deleteProduct(id);
   };
 
   const getStockBadge = (status) => {
@@ -560,27 +544,50 @@ function ProductsManagement() {
           }}
         />
 
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={handleOpenModal}
-          sx={{
-            backgroundColor: "#2dd4bf",
-            color: "#090d16",
-            fontWeight: 800,
-            textTransform: "none",
-            borderRadius: "10px",
-            px: 2.5,
-            py: 1,
-            boxShadow: "0 4px 15px rgba(45, 212, 191, 0.25)",
-            "&:hover": {
-              backgroundColor: "#0d9488",
-              color: "white",
-            },
-          }}
-        >
-          Add Product
-        </Button>
+        <Box display="flex" gap={1.5}>
+          <Button
+            variant="outlined"
+            startIcon={<AddIcon />}
+            onClick={handleOpenCategoryModal}
+            sx={{
+              color: "#2dd4bf",
+              borderColor: "rgba(45, 212, 191, 0.3)",
+              fontWeight: 700,
+              textTransform: "none",
+              borderRadius: "10px",
+              px: 2,
+              py: 1,
+              "&:hover": {
+                borderColor: "#2dd4bf",
+                backgroundColor: "rgba(45, 212, 191, 0.08)",
+              },
+            }}
+          >
+            Add Category
+          </Button>
+
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={handleOpenModal}
+            sx={{
+              backgroundColor: "#2dd4bf",
+              color: "#090d16",
+              fontWeight: 800,
+              textTransform: "none",
+              borderRadius: "10px",
+              px: 2.5,
+              py: 1,
+              boxShadow: "0 4px 15px rgba(45, 212, 191, 0.25)",
+              "&:hover": {
+                backgroundColor: "#0d9488",
+                color: "white",
+              },
+            }}
+          >
+            Add Product
+          </Button>
+        </Box>
       </Box>
 
       {/* Products Table */}
@@ -620,7 +627,9 @@ function ProductsManagement() {
                     <TableCell sx={{ color: "#94a3b8" }}>{prod.category}</TableCell>
                     <TableCell sx={{ color: "white", fontWeight: 600 }}>{prod.stock}</TableCell>
                     <TableCell>{getStockBadge(prod.status)}</TableCell>
-                    <TableCell sx={{ color: "#2dd4bf", fontWeight: 800 }}>{prod.price}</TableCell>
+                    <TableCell sx={{ color: "#2dd4bf", fontWeight: 800 }}>
+                      {typeof prod.price === "number" ? `$${prod.price.toFixed(2)}` : prod.price}
+                    </TableCell>
                     <TableCell align="right">
                       <Tooltip title="Delete Product">
                         <IconButton
@@ -693,9 +702,11 @@ function ProductsManagement() {
                 "&.Mui-focused .MuiOutlinedInput-notchedOutline": { borderColor: "#2dd4bf" },
               }}
             >
-              <MenuItem value="Electronics">Electronics</MenuItem>
-              <MenuItem value="Gadgets">Gadgets</MenuItem>
-              <MenuItem value="Skincare">Skincare</MenuItem>
+              {categories.map((cat) => (
+                <MenuItem key={cat} value={cat}>
+                  {cat}
+                </MenuItem>
+              ))}
             </Select>
           </FormControl>
 
@@ -759,6 +770,66 @@ function ProductsManagement() {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Add New Category Dialog Modal */}
+      <Dialog
+        open={openCategoryModal}
+        onClose={handleCloseCategoryModal}
+        PaperProps={{
+          sx: {
+            backgroundColor: "#0e1626",
+            border: "1px solid rgba(255, 255, 255, 0.1)",
+            borderRadius: "16px",
+            color: "white",
+            minWidth: { xs: "90%", sm: "400px" },
+          },
+        }}
+      >
+        <DialogTitle sx={{ fontWeight: 800, color: "#2dd4bf" }}>Add New Store Category</DialogTitle>
+        <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2.5, pt: 2 }}>
+          <Typography variant="body2" color="#94a3b8">
+            Create a new category name for your product catalog (e.g., Furniture, Clothing, Footwear, Home & Kitchen).
+          </Typography>
+          <TextField
+            label="Category Name"
+            placeholder="e.g. Furniture"
+            fullWidth
+            value={newCategoryInput}
+            onChange={(e) => setNewCategoryInput(e.target.value)}
+            sx={{
+              "& .MuiOutlinedInput-root": {
+                color: "white",
+                backgroundColor: "rgba(255, 255, 255, 0.02)",
+                borderRadius: "10px",
+                "& fieldset": { borderColor: "rgba(255, 255, 255, 0.1)" },
+                "&.Mui-focused fieldset": { borderColor: "#2dd4bf" },
+              },
+              "& .MuiInputLabel-root": { color: "#64748b" },
+              "& .MuiInputLabel-root.Mui-focused": { color: "#2dd4bf" },
+            }}
+          />
+        </DialogContent>
+        <DialogActions sx={{ p: 2.5 }}>
+          <Button onClick={handleCloseCategoryModal} sx={{ color: "#64748b", textTransform: "none", fontWeight: 600 }}>
+            Cancel
+          </Button>
+          <Button
+            onClick={handleSaveCategory}
+            variant="contained"
+            sx={{
+              backgroundColor: "#2dd4bf",
+              color: "#090d16",
+              fontWeight: 800,
+              textTransform: "none",
+              borderRadius: "10px",
+              px: 3,
+              "&:hover": { backgroundColor: "#0d9488", color: "white" },
+            }}
+          >
+            Save Category
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }
@@ -767,14 +838,7 @@ function ProductsManagement() {
 function UserManagement() {
   const [search, setSearch] = useState("");
   const [openModal, setOpenModal] = useState(false);
-
-  const [users, setUsers] = useState([
-    { id: "USER-201", name: "Sarah Jenkins", email: "sarah.j@example.com", role: "Customer", joined: "Oct 12, 2026", status: "Active" },
-    { id: "USER-202", name: "Michael Chen", email: "m.chen@techcorp.io", role: "Admin", joined: "Aug 05, 2026", status: "Active" },
-    { id: "USER-203", name: "Emily Rodriguez", email: "emily.r@designhub.com", role: "Customer", joined: "Sep 20, 2026", status: "Active" },
-    { id: "USER-204", name: "David Kim", email: "david.k@spamuser.net", role: "Customer", joined: "Oct 19, 2026", status: "Suspended" },
-    { id: "USER-205", name: "Arjun Krishna", email: "arjun@nexus.io", role: "Admin", joined: "Jul 01, 2026", status: "Active" },
-  ]);
+  const { registeredUsers, registerUser, deleteUserAccount, toggleUserStatus, toggleUserRole } = useAuth();
 
   const [newUser, setNewUser] = useState({
     name: "",
@@ -783,14 +847,14 @@ function UserManagement() {
   });
 
   const filteredUsers = useMemo(() => {
-    return users.filter(
+    return registeredUsers.filter(
       (u) =>
-        u.name.toLowerCase().includes(search.toLowerCase()) ||
-        u.email.toLowerCase().includes(search.toLowerCase()) ||
-        u.id.toLowerCase().includes(search.toLowerCase()) ||
-        u.role.toLowerCase().includes(search.toLowerCase())
+        (u.name || "").toLowerCase().includes(search.toLowerCase()) ||
+        (u.email || "").toLowerCase().includes(search.toLowerCase()) ||
+        (u.id || "").toLowerCase().includes(search.toLowerCase()) ||
+        (u.role || "").toLowerCase().includes(search.toLowerCase())
     );
-  }, [users, search]);
+  }, [registeredUsers, search]);
 
   const handleOpenModal = () => setOpenModal(true);
   const handleCloseModal = () => {
@@ -800,44 +864,20 @@ function UserManagement() {
 
   const handleAddUser = () => {
     if (!newUser.name || !newUser.email) return;
-
-    const formattedDate = new Date().toLocaleDateString("en-US", {
-      month: "short",
-      day: "2-digit",
-      year: "numeric",
-    });
-
-    const newAccount = {
-      id: `USER-${Math.floor(200 + Math.random() * 800)}`,
-      name: newUser.name,
-      email: newUser.email,
-      role: newUser.role,
-      joined: formattedDate,
-      status: "Active",
-    };
-
-    setUsers([newAccount, ...users]);
+    registerUser(newUser.name, newUser.email, "123456");
     handleCloseModal();
   };
 
   const handleToggleRole = (id) => {
-    setUsers(
-      users.map((u) =>
-        u.id === id ? { ...u, role: u.role === "Admin" ? "Customer" : "Admin" } : u
-      )
-    );
+    toggleUserRole(id);
   };
 
   const handleToggleStatus = (id) => {
-    setUsers(
-      users.map((u) =>
-        u.id === id ? { ...u, status: u.status === "Active" ? "Suspended" : "Active" } : u
-      )
-    );
+    toggleUserStatus(id);
   };
 
   const handleDeleteUser = (id) => {
-    setUsers(users.filter((u) => u.id !== id));
+    deleteUserAccount(id);
   };
 
   return (

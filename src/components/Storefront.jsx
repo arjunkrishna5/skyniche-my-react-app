@@ -14,6 +14,9 @@ import {
   Chip,
   Avatar,
   Container,
+  Menu,
+  MenuItem,
+  Tooltip,
 } from "@mui/material";
 import {
   ShoppingCart as ShoppingCartIcon,
@@ -31,95 +34,33 @@ import {
 import { useNavigate } from "react-router-dom";
 import { useSnackbar } from "notistack";
 import { useAuth } from "../contents/AuthContext";
-
-const INITIAL_PRODUCTS = [
-  {
-    id: "PROD-101",
-    name: 'MacBook Pro 16" M3 Max',
-    category: "Electronics",
-    price: 2499.0,
-    rating: 4.9,
-    reviews: 342,
-    desc: "Apple M3 Max chip, 36GB unified memory, Liquid Retina XDR display, and all-day battery life.",
-    badge: "Top Seller",
-    badgeColor: "#2dd4bf",
-    icon: <LaptopIcon sx={{ fontSize: 32, color: "#2dd4bf" }} />,
-  },
-  {
-    id: "PROD-102",
-    name: "iPhone 15 Pro Max 256GB",
-    category: "Electronics",
-    price: 1199.0,
-    rating: 4.8,
-    reviews: 512,
-    desc: "Forged in titanium, A17 Pro chip, customizable Action button, and 5x optical zoom camera system.",
-    badge: "Popular",
-    badgeColor: "#6366f1",
-    icon: <PhoneIcon sx={{ fontSize: 32, color: "#6366f1" }} />,
-  },
-  {
-    id: "PROD-103",
-    name: "Sony WH-1000XM5 Wireless",
-    category: "Gadgets",
-    price: 399.0,
-    rating: 4.9,
-    reviews: 289,
-    desc: "Industry-leading noise canceling with 2 processors, 8 microphones, and crystal-clear hands-free calling.",
-    badge: "Noise Cancelling",
-    badgeColor: "#c084fc",
-    icon: <HeadphonesIcon sx={{ fontSize: 32, color: "#c084fc" }} />,
-  },
-  {
-    id: "PROD-104",
-    name: "Hydrating Glow SPF 50 Sunscreen",
-    category: "Skincare",
-    price: 28.0,
-    rating: 4.7,
-    reviews: 184,
-    desc: "Broad spectrum UVA/UVB protection enriched with hyaluronic acid and niacinamide for daily glow.",
-    badge: "Skin Shield",
-    badgeColor: "#fbbf24",
-    icon: <SkincareIcon sx={{ fontSize: 32, color: "#fbbf24" }} />,
-  },
-  {
-    id: "PROD-105",
-    name: "Ultra HD Smartwatch Series 9",
-    category: "Gadgets",
-    price: 429.0,
-    rating: 4.8,
-    reviews: 195,
-    desc: "Advanced health sensors, ECG app, Always-On Retina display, and precision GPS workout tracking.",
-    badge: "Fitness Tech",
-    badgeColor: "#38bdf8",
-    icon: <GadgetIcon sx={{ fontSize: 32, color: "#38bdf8" }} />,
-  },
-  {
-    id: "PROD-106",
-    name: "Vitamin C Radiance Serum",
-    category: "Skincare",
-    price: 34.5,
-    rating: 4.9,
-    reviews: 142,
-    desc: "Potent 15% Pure Vitamin C antioxidant formula that brightens dark spots and boosts collagen synthesis.",
-    badge: "Trending",
-    badgeColor: "#ec4899",
-    icon: <SkincareIcon sx={{ fontSize: 32, color: "#ec4899" }} />,
-  },
-];
-
-const CATEGORIES = ["All", "Electronics", "Gadgets", "Skincare"];
+import { useProducts } from "../contents/ProductContext";
 
 export default function Storefront() {
   const navigate = useNavigate();
   const { enqueueSnackbar } = useSnackbar();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user, logout } = useAuth();
+  const { products, placeOrder } = useProducts();
 
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
   const [cart, setCart] = useState([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
+  const [anchorElUser, setAnchorElUser] = useState(null);
 
-  const filteredProducts = INITIAL_PRODUCTS.filter((product) => {
+  const handleOpenUserMenu = (event) => setAnchorElUser(event.currentTarget);
+  const handleCloseUserMenu = () => setAnchorElUser(null);
+
+  const handleUserLogout = () => {
+    handleCloseUserMenu();
+    logout();
+    enqueueSnackbar("Logged out successfully.", { variant: "info" });
+    navigate("/login");
+  };
+
+  const categories = ["All", ...Array.from(new Set(products.map((p) => p.category)))];
+
+  const filteredProducts = products.filter((product) => {
     const matchesCategory =
       selectedCategory === "All" || product.category === selectedCategory;
     const matchesSearch =
@@ -288,36 +229,111 @@ export default function Storefront() {
               </IconButton>
 
               {isAuthenticated ? (
-                <Box display="flex" gap={1.5}>
-                  <Button
-                    variant="text"
-                    onClick={() => navigate("/my-orders")}
-                    sx={{
-                      color: "#94a3b8",
-                      fontWeight: 700,
-                      textTransform: "none",
-                      "&:hover": { color: "#2dd4bf" },
-                    }}
-                  >
-                    My Orders
-                  </Button>
-                  <Button
-                    variant="outlined"
-                    onClick={() => navigate("/dashboard")}
-                    sx={{
-                      color: "#2dd4bf",
-                      borderColor: "rgba(45, 212, 191, 0.3)",
-                      borderRadius: "10px",
-                      fontWeight: 700,
-                      textTransform: "none",
-                      "&:hover": {
-                        borderColor: "#2dd4bf",
-                        backgroundColor: "rgba(45, 212, 191, 0.05)",
+                <Box display="flex" alignItems="center" gap={1.5}>
+                  {user?.role === "admin" && (
+                    <Button
+                      variant="outlined"
+                      onClick={() => navigate("/dashboard")}
+                      sx={{
+                        color: "#2dd4bf",
+                        borderColor: "rgba(45, 212, 191, 0.3)",
+                        borderRadius: "10px",
+                        fontWeight: 700,
+                        textTransform: "none",
+                        fontSize: "0.85rem",
+                        "&:hover": {
+                          borderColor: "#2dd4bf",
+                          backgroundColor: "rgba(45, 212, 191, 0.05)",
+                        },
+                      }}
+                    >
+                      Admin Dashboard
+                    </Button>
+                  )}
+
+                  <Tooltip title="Account Settings">
+                    <IconButton onClick={handleOpenUserMenu} sx={{ p: 0.5 }}>
+                      <Avatar
+                        sx={{
+                          width: 38,
+                          height: 38,
+                          bgcolor: "#2dd4bf",
+                          color: "#090d16",
+                          fontWeight: 800,
+                          fontSize: "1rem",
+                          border: "2px solid rgba(45, 212, 191, 0.4)",
+                        }}
+                      >
+                        {(user?.name?.[0] || "U").toUpperCase()}
+                      </Avatar>
+                    </IconButton>
+                  </Tooltip>
+
+                  <Menu
+                    id="menu-appbar"
+                    anchorEl={anchorElUser}
+                    anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+                    transformOrigin={{ vertical: "top", horizontal: "right" }}
+                    open={Boolean(anchorElUser)}
+                    onClose={handleCloseUserMenu}
+                    PaperProps={{
+                      sx: {
+                        mt: 1.5,
+                        backgroundColor: "#0e1626",
+                        color: "white",
+                        border: "1px solid rgba(255, 255, 255, 0.1)",
+                        borderRadius: "14px",
+                        minWidth: 180,
+                        boxShadow: "0 10px 30px rgba(0,0,0,0.5)",
                       },
                     }}
                   >
-                    Dashboard
-                  </Button>
+                    <Box sx={{ px: 2, py: 1.5 }}>
+                      <Typography variant="body2" fontWeight={800} color="white">
+                        {user?.name || "User Account"}
+                      </Typography>
+                      <Typography variant="caption" color="#64748b">
+                        {user?.email || "user@domain.com"}
+                      </Typography>
+                    </Box>
+
+                    <Divider sx={{ borderColor: "rgba(255, 255, 255, 0.08)", my: 0.5 }} />
+
+                    <MenuItem
+                      onClick={() => {
+                        handleCloseUserMenu();
+                        navigate("/profile");
+                      }}
+                      sx={{ py: 1, "&:hover": { backgroundColor: "rgba(255, 255, 255, 0.04)", color: "#2dd4bf" } }}
+                    >
+                      <Typography variant="body2" fontWeight={600}>
+                        My Profile
+                      </Typography>
+                    </MenuItem>
+
+                    <MenuItem
+                      onClick={() => {
+                        handleCloseUserMenu();
+                        navigate("/my-orders");
+                      }}
+                      sx={{ py: 1, "&:hover": { backgroundColor: "rgba(255, 255, 255, 0.04)", color: "#2dd4bf" } }}
+                    >
+                      <Typography variant="body2" fontWeight={600}>
+                        My Orders
+                      </Typography>
+                    </MenuItem>
+
+                    <Divider sx={{ borderColor: "rgba(255, 255, 255, 0.08)", my: 0.5 }} />
+
+                    <MenuItem
+                      onClick={handleUserLogout}
+                      sx={{ py: 1, "&:hover": { backgroundColor: "rgba(248, 113, 113, 0.1)" } }}
+                    >
+                      <Typography variant="body2" fontWeight={700} color="#f87171">
+                        Logout
+                      </Typography>
+                    </MenuItem>
+                  </Menu>
                 </Box>
               ) : (
                 <Button
@@ -369,7 +385,7 @@ export default function Storefront() {
               WebkitTextFillColor: "transparent",
             }}
           >
-            Upgrade Your Everyday Tech & Skincare
+            Discover Premium Quality Products
           </Typography>
           <Typography
             variant="body1"
@@ -378,7 +394,7 @@ export default function Storefront() {
             mx="auto"
             sx={{ fontSize: "1.1rem", lineHeight: 1.6 }}
           >
-            Explore top-tier laptops, smartphones, wireless headphones, and premium skincare products delivered to your door.
+            Explore our curated catalog of top-rated items, search live, and get your orders delivered straight to your door.
           </Typography>
         </Box>
 
@@ -390,7 +406,7 @@ export default function Storefront() {
           flexWrap="wrap"
           mb={6}
         >
-          {CATEGORIES.map((cat) => (
+          {categories.map((cat) => (
             <Chip
               key={cat}
               label={cat}
@@ -675,7 +691,11 @@ export default function Storefront() {
               variant="contained"
               endIcon={<ArrowForwardIcon />}
               onClick={() => {
-                enqueueSnackbar("Checkout feature ready for Stripe integration!", { variant: "info" });
+                const newOrder = placeOrder(cart, totalCartPrice, user?.name || "Sarah Jenkins");
+                setCart([]);
+                setIsCartOpen(false);
+                enqueueSnackbar(`Order ${newOrder.id} placed successfully! Tracking active.`, { variant: "success" });
+                navigate("/my-orders");
               }}
               sx={{
                 backgroundColor: "#2dd4bf",

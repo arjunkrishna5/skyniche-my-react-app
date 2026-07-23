@@ -15,6 +15,9 @@ import {
   Stepper,
   Step,
   StepLabel,
+  Menu,
+  MenuItem,
+  Tooltip,
 } from "@mui/material";
 import {
   ShoppingBag as ShoppingBagIcon,
@@ -28,58 +31,28 @@ import {
 import { useNavigate } from "react-router-dom";
 import { useSnackbar } from "notistack";
 import { useAuth } from "../contents/AuthContext";
-
-const MOCK_CUSTOMER_ORDERS = [
-  {
-    id: "#ORD-9821",
-    date: "Oct 20, 2026",
-    total: "$2,499.00",
-    status: "In Transit",
-    activeStep: 2, // 0: Placed, 1: Packed, 2: In Transit, 3: Delivered
-    items: [
-      {
-        name: 'MacBook Pro 16" M3 Max',
-        qty: 1,
-        price: "$2,499.00",
-        image: "https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=300&auto=format&fit=crop&q=80",
-      },
-    ],
-    trackingNumber: "FDX-901248912",
-    estimatedDelivery: "Tomorrow, Oct 23",
-  },
-  {
-    id: "#ORD-9818",
-    date: "Oct 12, 2026",
-    total: "$427.00",
-    status: "Delivered",
-    activeStep: 3,
-    items: [
-      {
-        name: "Sony WH-1000XM5 Wireless Headphones",
-        qty: 1,
-        price: "$399.00",
-        image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=300&auto=format&fit=crop&q=80",
-      },
-      {
-        name: "Hydrating Glow SPF 50 Sunscreen",
-        qty: 1,
-        price: "$28.00",
-        image: "https://images.unsplash.com/photo-1598440947619-2c35fc9aa908?w=300&auto=format&fit=crop&q=80",
-      },
-    ],
-    trackingNumber: "FDX-882104921",
-    estimatedDelivery: "Delivered on Oct 14",
-  },
-];
+import { useProducts } from "../contents/ProductContext";
 
 const ORDER_STEPS = ["Order Placed", "Packed", "In Transit", "Delivered"];
 
 export default function CustomerAccount() {
   const navigate = useNavigate();
   const { enqueueSnackbar } = useSnackbar();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
+  const { orders } = useProducts();
 
   const [activeTab, setActiveTab] = useState(0);
+  const [anchorElUser, setAnchorElUser] = useState(null);
+
+  const handleOpenUserMenu = (event) => setAnchorElUser(event.currentTarget);
+  const handleCloseUserMenu = () => setAnchorElUser(null);
+
+  const handleUserLogout = () => {
+    handleCloseUserMenu();
+    logout();
+    enqueueSnackbar("Logged out successfully.", { variant: "info" });
+    navigate("/login");
+  };
 
   // Profile Form State
   const [profileData, setProfileData] = useState({
@@ -144,25 +117,97 @@ export default function CustomerAccount() {
             </Button>
 
             <Box display="flex" alignItems="center" gap={1.5}>
-              <Avatar
-                sx={{
-                  width: 38,
-                  height: 38,
-                  bgcolor: "#2dd4bf",
-                  color: "#090d16",
-                  fontWeight: 800,
-                }}
-              >
-                {(user?.name?.[0] || "S").toUpperCase()}
-              </Avatar>
+              <Tooltip title="Account Settings">
+                <IconButton onClick={handleOpenUserMenu} sx={{ p: 0.5 }}>
+                  <Avatar
+                    sx={{
+                      width: 38,
+                      height: 38,
+                      bgcolor: "#2dd4bf",
+                      color: "#090d16",
+                      fontWeight: 800,
+                      border: "2px solid rgba(45, 212, 191, 0.4)",
+                    }}
+                  >
+                    {(user?.name?.[0] || "U").toUpperCase()}
+                  </Avatar>
+                </IconButton>
+              </Tooltip>
+
               <Box sx={{ display: { xs: "none", sm: "block" } }}>
                 <Typography variant="body2" fontWeight={700} color="white">
-                  {profileData.name}
+                  {user?.name || profileData.name}
                 </Typography>
                 <Typography variant="caption" color="#64748b">
-                  {profileData.email}
+                  {user?.email || profileData.email}
                 </Typography>
               </Box>
+
+              <Menu
+                id="menu-appbar"
+                anchorEl={anchorElUser}
+                anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+                transformOrigin={{ vertical: "top", horizontal: "right" }}
+                open={Boolean(anchorElUser)}
+                onClose={handleCloseUserMenu}
+                PaperProps={{
+                  sx: {
+                    mt: 1.5,
+                    backgroundColor: "#0e1626",
+                    color: "white",
+                    border: "1px solid rgba(255, 255, 255, 0.1)",
+                    borderRadius: "14px",
+                    minWidth: 180,
+                    boxShadow: "0 10px 30px rgba(0,0,0,0.5)",
+                  },
+                }}
+              >
+                <Box sx={{ px: 2, py: 1.5 }}>
+                  <Typography variant="body2" fontWeight={800} color="white">
+                    {user?.name || "User Account"}
+                  </Typography>
+                  <Typography variant="caption" color="#64748b">
+                    {user?.email || "user@domain.com"}
+                  </Typography>
+                </Box>
+
+                <Divider sx={{ borderColor: "rgba(255, 255, 255, 0.08)", my: 0.5 }} />
+
+                <MenuItem
+                  onClick={() => {
+                    handleCloseUserMenu();
+                    setActiveTab(1);
+                  }}
+                  sx={{ py: 1, "&:hover": { backgroundColor: "rgba(255, 255, 255, 0.04)", color: "#2dd4bf" } }}
+                >
+                  <Typography variant="body2" fontWeight={600}>
+                    My Profile
+                  </Typography>
+                </MenuItem>
+
+                <MenuItem
+                  onClick={() => {
+                    handleCloseUserMenu();
+                    setActiveTab(0);
+                  }}
+                  sx={{ py: 1, "&:hover": { backgroundColor: "rgba(255, 255, 255, 0.04)", color: "#2dd4bf" } }}
+                >
+                  <Typography variant="body2" fontWeight={600}>
+                    My Orders
+                  </Typography>
+                </MenuItem>
+
+                <Divider sx={{ borderColor: "rgba(255, 255, 255, 0.08)", my: 0.5 }} />
+
+                <MenuItem
+                  onClick={handleUserLogout}
+                  sx={{ py: 1, "&:hover": { backgroundColor: "rgba(248, 113, 113, 0.1)" } }}
+                >
+                  <Typography variant="body2" fontWeight={700} color="#f87171">
+                    Logout
+                  </Typography>
+                </MenuItem>
+              </Menu>
             </Box>
           </Box>
         </Container>
@@ -212,7 +257,7 @@ export default function CustomerAccount() {
         {/* TAB 0: MY ORDERS */}
         {activeTab === 0 && (
           <Box display="flex" flexDirection="column" gap={3.5}>
-            {MOCK_CUSTOMER_ORDERS.map((order) => (
+            {orders.map((order) => (
               <Paper
                 key={order.id}
                 sx={{

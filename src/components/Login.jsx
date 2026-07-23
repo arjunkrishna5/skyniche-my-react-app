@@ -23,10 +23,11 @@ import GitHubIcon from "@mui/icons-material/GitHub";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 
 function Login() {
-  const { login } = useAuth();
+  const { login, registerUser } = useAuth();
   const navigate = useNavigate();
   const { enqueueSnackbar } = useSnackbar();
 
+  const [isSignUp, setIsSignUp] = useState(false); // Toggle between Sign In and Sign Up
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -43,24 +44,49 @@ function Login() {
     });
   };
 
-  const initialValues = {
-    email: "",
-    password: "",
-  };
+  const initialValues = isSignUp
+    ? { name: "", email: "", password: "" }
+    : { email: "", password: "" };
 
-  const validationSchema = Yup.object({
-    email: Yup.string().email("Please enter a valid email").required("Email is required"),
-    password: Yup.string().required("Password is required"),
-  });
+  const validationSchema = Yup.object(
+    isSignUp
+      ? {
+          name: Yup.string().required("Full name is required"),
+          email: Yup.string().email("Please enter a valid email").required("Email is required"),
+          password: Yup.string().min(6, "Password must be at least 6 characters").required("Password is required"),
+        }
+      : {
+          email: Yup.string().email("Please enter a valid email").required("Email is required"),
+          password: Yup.string().required("Password is required"),
+        }
+  );
 
   const handleSubmit = async (values, { setSubmitting }) => {
     setLoading(true);
-    const response = await login(values.email, values.password);
+    let response;
+
+    if (isSignUp) {
+      response = await registerUser(values.name, values.email, values.password);
+    } else {
+      response = await login(values.email, values.password);
+    }
+    
     setLoading(false);
 
     if (response.success) {
-      enqueueSnackbar("Welcome back!", { variant: "success" });
-      navigate("/dashboard");
+      const isUserAdmin = response.user.role?.toLowerCase() === "admin";
+      enqueueSnackbar(
+        isSignUp
+          ? `Account created! Logged in as ${isUserAdmin ? "Admin" : "User"}.`
+          : `Welcome back, ${response.user.name}! (${isUserAdmin ? "Admin Mode" : "User Mode"})`,
+        { variant: "success" }
+      );
+
+      if (isUserAdmin) {
+        navigate("/dashboard");
+      } else {
+        navigate("/shop");
+      }
     } else {
       enqueueSnackbar(response.error || "Authentication failed", { variant: "error" });
       setSubmitting(false);
@@ -72,7 +98,7 @@ function Login() {
       onMouseMove={handleScreenMouseMove}
       sx={{
         minHeight: "100vh",
-        background: "linear-gradient(135deg, #090d16 0%, #020617 100%)", // Deep dark background
+        background: "linear-gradient(135deg, #090d16 0%, #020617 100%)",
         display: "flex",
         justifyContent: "center",
         alignItems: "center",
@@ -96,7 +122,7 @@ function Login() {
         }}
       />
 
-      {/* Dynamic Cursor Spotlight Glow (Follows mouse cursor) */}
+      {/* Dynamic Cursor Spotlight Glow */}
       <Box
         sx={{
           position: "absolute",
@@ -106,9 +132,9 @@ function Login() {
           left: `${mouseCoords.x - 275}px`,
           top: `${mouseCoords.y - 275}px`,
           filter: "blur(40px)",
-          pointerEvents: "none", // Ensures mouse events pass through to form inputs
+          pointerEvents: "none",
           zIndex: 2,
-          transition: "left 0.1s ease-out, top 0.1s ease-out", // Adds smooth lag to the cursor spotlight
+          transition: "left 0.1s ease-out, top 0.1s ease-out",
         }}
       />
 
@@ -140,7 +166,7 @@ function Login() {
         }}
       />
 
-      {/* Centered Login Card */}
+      {/* Clean Centered Card */}
       <Paper
         elevation={24}
         sx={{
@@ -159,7 +185,7 @@ function Login() {
           "&:hover": {
             boxShadow: "0 35px 60px -10px rgba(0, 0, 0, 0.7), 0 0 50px rgba(45, 212, 191, 0.08)",
             borderColor: "rgba(45, 212, 191, 0.15)",
-          }
+          },
         }}
       >
         {/* Back to Home Link */}
@@ -181,7 +207,7 @@ function Login() {
               },
               "&:hover .MuiButton-startIcon": {
                 transform: "translateX(-4px)",
-              }
+              },
             }}
           >
             Back to Home
@@ -189,17 +215,19 @@ function Login() {
         </Box>
 
         {/* Header Title */}
-        <Box sx={{ mb: 4 }}>
+        <Box sx={{ mb: 3 }}>
           <Typography
             variant="h4"
             fontWeight={800}
             color="white"
             sx={{ letterSpacing: "-0.5px", mb: 1 }}
           >
-            Sign In
+            {isSignUp ? "Create Account" : "Sign In"}
           </Typography>
           <Typography variant="body2" color="#64748b" fontWeight={500}>
-            Welcome back! Please enter your credentials below.
+            {isSignUp
+              ? "Fill in your details to create a new user account."
+              : "Welcome back! Enter your email and password to continue."}
           </Typography>
         </Box>
 
@@ -207,6 +235,7 @@ function Login() {
           initialValues={initialValues}
           validationSchema={validationSchema}
           onSubmit={handleSubmit}
+          enableReinitialize
         >
           {({
             values,
@@ -217,6 +246,34 @@ function Login() {
             handleSubmit,
           }) => (
             <Form onSubmit={handleSubmit}>
+              {isSignUp && (
+                <TextField
+                  label="Full Name"
+                  name="name"
+                  fullWidth
+                  variant="outlined"
+                  value={values.name}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                  error={touched.name && Boolean(errors.name)}
+                  helperText={touched.name && errors.name}
+                  sx={{
+                    mb: 2.5,
+                    "& .MuiOutlinedInput-root": {
+                      color: "white",
+                      backgroundColor: "rgba(255, 255, 255, 0.02)",
+                      borderRadius: "10px",
+                      "& fieldset": { borderColor: "rgba(255, 255, 255, 0.08)" },
+                      "&:hover fieldset": { borderColor: "rgba(255, 255, 255, 0.18)" },
+                      "&.Mui-focused": { boxShadow: "0 0 16px rgba(45, 212, 191, 0.15)" },
+                      "&.Mui-focused fieldset": { borderColor: "#2dd4bf" },
+                    },
+                    "& .MuiInputLabel-root": { color: "#64748b" },
+                    "& .MuiInputLabel-root.Mui-focused": { color: "#2dd4bf" },
+                  }}
+                />
+              )}
+
               <TextField
                 label="Email Address"
                 type="email"
@@ -228,37 +285,20 @@ function Login() {
                 onBlur={handleBlur}
                 error={touched.email && Boolean(errors.email)}
                 helperText={touched.email && errors.email}
+                placeholder="e.g. admin@gmail.com or user@gmail.com"
                 sx={{
-                  mb: 3,
+                  mb: 2.5,
                   "& .MuiOutlinedInput-root": {
                     color: "white",
                     backgroundColor: "rgba(255, 255, 255, 0.02)",
                     borderRadius: "10px",
-                    transition: "box-shadow 0.25s ease-in-out, border-color 0.2s",
-                    "& fieldset": {
-                      borderColor: "rgba(255, 255, 255, 0.08)",
-                      transition: "border-color 0.2s",
-                    },
-                    "&:hover fieldset": {
-                      borderColor: "rgba(255, 255, 255, 0.18)",
-                    },
-                    "&.Mui-focused": {
-                      boxShadow: "0 0 16px rgba(45, 212, 191, 0.15)",
-                    },
-                    "&.Mui-focused fieldset": {
-                      borderColor: "#2dd4bf",
-                    },
+                    "& fieldset": { borderColor: "rgba(255, 255, 255, 0.08)" },
+                    "&:hover fieldset": { borderColor: "rgba(255, 255, 255, 0.18)" },
+                    "&.Mui-focused": { boxShadow: "0 0 16px rgba(45, 212, 191, 0.15)" },
+                    "&.Mui-focused fieldset": { borderColor: "#2dd4bf" },
                   },
-                  "& .MuiInputLabel-root": {
-                    color: "#64748b",
-                    fontWeight: 500,
-                  },
-                  "& .MuiInputLabel-root.Mui-focused": {
-                    color: "#2dd4bf",
-                  },
-                  "& .MuiFormHelperText-root": {
-                    color: "#f87171",
-                  }
+                  "& .MuiInputLabel-root": { color: "#64748b" },
+                  "& .MuiInputLabel-root.Mui-focused": { color: "#2dd4bf" },
                 }}
               />
 
@@ -274,45 +314,23 @@ function Login() {
                 error={touched.password && Boolean(errors.password)}
                 helperText={touched.password && errors.password}
                 sx={{
-                  mb: 2.5,
+                  mb: isSignUp ? 3 : 2,
                   "& .MuiOutlinedInput-root": {
                     color: "white",
                     backgroundColor: "rgba(255, 255, 255, 0.02)",
                     borderRadius: "10px",
-                    transition: "box-shadow 0.25s ease-in-out, border-color 0.2s",
-                    "& fieldset": {
-                      borderColor: "rgba(255, 255, 255, 0.08)",
-                      transition: "border-color 0.2s",
-                    },
-                    "&:hover fieldset": {
-                      borderColor: "rgba(255, 255, 255, 0.18)",
-                    },
-                    "&.Mui-focused": {
-                      boxShadow: "0 0 16px rgba(45, 212, 191, 0.15)",
-                    },
-                    "&.Mui-focused fieldset": {
-                      borderColor: "#2dd4bf",
-                    },
+                    "& fieldset": { borderColor: "rgba(255, 255, 255, 0.08)" },
+                    "&:hover fieldset": { borderColor: "rgba(255, 255, 255, 0.18)" },
+                    "&.Mui-focused": { boxShadow: "0 0 16px rgba(45, 212, 191, 0.15)" },
+                    "&.Mui-focused fieldset": { borderColor: "#2dd4bf" },
                   },
-                  "& .MuiInputLabel-root": {
-                    color: "#64748b",
-                    fontWeight: 500,
-                  },
-                  "& .MuiInputLabel-root.Mui-focused": {
-                    color: "#2dd4bf",
-                  },
-                  "& .MuiFormHelperText-root": {
-                    color: "#f87171",
-                  }
+                  "& .MuiInputLabel-root": { color: "#64748b" },
+                  "& .MuiInputLabel-root.Mui-focused": { color: "#2dd4bf" },
                 }}
                 InputProps={{
                   endAdornment: (
                     <InputAdornment position="end">
-                      <IconButton
-                        onClick={togglePasswordVisibility}
-                        edge="end"
-                        sx={{ color: "#64748b" }}
-                      >
+                      <IconButton onClick={togglePasswordVisibility} edge="end" sx={{ color: "#64748b" }}>
                         {showPassword ? <VisibilityOff /> : <Visibility />}
                       </IconButton>
                     </InputAdornment>
@@ -320,21 +338,22 @@ function Login() {
                 }}
               />
 
-              <Box display="flex" justifyContent="flex-end" mb={3.5}>
-                <Link
-                  href="#"
-                  underline="hover"
-                  sx={{
-                    color: "#2dd4bf",
-                    fontSize: "0.85rem",
-                    fontWeight: 600,
-                    transition: "color 0.2s",
-                    "&:hover": { color: "#0d9488" },
-                  }}
-                >
-                  Forgot password?
-                </Link>
-              </Box>
+              {!isSignUp && (
+                <Box display="flex" justifyContent="flex-end" mb={3}>
+                  <Link
+                    href="#"
+                    underline="hover"
+                    sx={{
+                      color: "#2dd4bf",
+                      fontSize: "0.85rem",
+                      fontWeight: 600,
+                      "&:hover": { color: "#0d9488" },
+                    }}
+                  >
+                    Forgot password?
+                  </Link>
+                </Box>
+              )}
 
               <Button
                 type="submit"
@@ -351,44 +370,44 @@ function Login() {
                   borderRadius: "10px",
                   textTransform: "none",
                   boxShadow: "0 4px 20px rgba(45, 212, 191, 0.25)",
-                  transition: "all 0.3s ease",
-                  "&:hover": {
-                    background: "linear-gradient(90deg, #0d9488 0%, #0f766e 100%)",
-                    boxShadow: "0 6px 24px rgba(13, 148, 136, 0.4)",
-                    transform: "translateY(-1px)",
-                  },
-                  "&.Mui-disabled": {
-                    background: "rgba(255, 255, 255, 0.15)",
-                    color: "#64748b",
-                  }
+                  mb: 3,
                 }}
               >
-                {loading ? <CircularProgress size={24} color="inherit" /> : "Sign In"}
+                {loading ? (
+                  <CircularProgress size={24} color="inherit" />
+                ) : isSignUp ? (
+                  "Create Account"
+                ) : (
+                  "Sign In"
+                )}
               </Button>
             </Form>
           )}
         </Formik>
 
+        {/* Account Toggle Link */}
         <Typography
           sx={{
             color: "#64748b",
             textAlign: "center",
             fontSize: "0.85rem",
             fontWeight: 500,
-            mb: 4,
+            mb: 3,
           }}
         >
-          Don't have an account?{" "}
+          {isSignUp ? "Already have an account? " : "Don't have an account? "}
           <Link
-            href="#"
+            component="button"
+            onClick={() => setIsSignUp(!isSignUp)}
             underline="hover"
             sx={{
               color: "#2dd4bf",
               fontWeight: 700,
+              cursor: "pointer",
               "&:hover": { color: "#0d9488" },
             }}
           >
-            Sign Up
+            {isSignUp ? "Sign In" : "Sign Up"}
           </Link>
         </Typography>
 
