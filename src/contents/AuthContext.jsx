@@ -7,8 +7,26 @@ const AuthContext = createContext();
 const API_BASE = REST_API.endsWith('/') ? REST_API.slice(0, -1) : REST_API;
 
 export const AuthProvider = ({ children }) => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [user, setUser] = useState(null);
+  // Session persistence per tab using sessionStorage (allows multi-tab testing)
+  const [user, setUser] = useState(() => {
+    const savedUser = sessionStorage.getItem("ecommerce_current_user") || localStorage.getItem("ecommerce_current_user");
+    return savedUser ? JSON.parse(savedUser) : null;
+  });
+
+  const [isAuthenticated, setIsAuthenticated] = useState(() => {
+    return !!(sessionStorage.getItem("ecommerce_current_user") || localStorage.getItem("ecommerce_current_user"));
+  });
+
+  useEffect(() => {
+    if (user) {
+      sessionStorage.setItem("ecommerce_current_user", JSON.stringify(user));
+      setIsAuthenticated(true);
+    } else {
+      sessionStorage.removeItem("ecommerce_current_user");
+      localStorage.removeItem("ecommerce_current_user");
+      setIsAuthenticated(false);
+    }
+  }, [user]);
 
   // Registered users list (starts clean)
   const [registeredUsers, setRegisteredUsers] = useState(() => {
@@ -151,6 +169,8 @@ export const AuthProvider = ({ children }) => {
   const logout = async () => {
     setUser(null);
     setIsAuthenticated(false);
+    sessionStorage.removeItem("ecommerce_current_user");
+    localStorage.removeItem("ecommerce_current_user");
   };
 
   return (

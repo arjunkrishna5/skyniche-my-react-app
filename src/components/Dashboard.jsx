@@ -117,29 +117,36 @@ const NAVIGATION = [
 
 // --- 1. DASHBOARD OVERVIEW SCREEN ---
 function DashboardOverview() {
+  const { orders, products } = useProducts();
+
+  const totalRevenue = orders.reduce((sum, o) => {
+    const val = parseFloat(String(o.total).replace("$", "").replace(",", "")) || 0;
+    return sum + val;
+  }, 0);
+
   const kpis = [
     {
       title: "Total Revenue",
-      value: "$48,256.00",
-      change: "+12.4%",
+      value: `$${totalRevenue.toFixed(2)}`,
+      change: orders.length > 0 ? "+100% Live" : "$0.00",
       isPositive: true,
-      timeframe: "vs last month",
+      timeframe: "from customer orders",
       icon: <AttachMoneyIcon sx={{ color: "#2dd4bf" }} />,
     },
     {
       title: "Total Orders",
-      value: "1,284",
-      change: "+8.2%",
+      value: orders.length.toString(),
+      change: orders.length > 0 ? "Active purchases" : "No orders yet",
       isPositive: true,
-      timeframe: "vs last week",
+      timeframe: "store total",
       icon: <ShoppingCartIcon sx={{ color: "#6366f1" }} />,
     },
     {
-      title: "Conversion Rate",
-      value: "2.42%",
-      change: "+0.5%",
+      title: "Active Products",
+      value: products.length.toString(),
+      change: "In catalog",
       isPositive: true,
-      timeframe: "vs yesterday",
+      timeframe: "live inventory",
       icon: <TrendingUpIcon sx={{ color: "#38bdf8" }} />,
     },
     {
@@ -150,13 +157,6 @@ function DashboardOverview() {
       timeframe: "Realtime visitors",
       icon: <PeopleIcon sx={{ color: "#ec4899" }} />,
     },
-  ];
-
-  const recentOrders = [
-    { id: "#1084", name: "Sarah Jenkins", items: "Premium Widget x1", status: "Delivered", price: "$149.00" },
-    { id: "#1083", name: "Michael Chen", items: "SaaS Plan Upgrade", status: "Processing", price: "$89.50" },
-    { id: "#1082", name: "Emily Rodriguez", items: "Pro License License", status: "Shipped", price: "$258.00" },
-    { id: "#1081", name: "David Kim", items: "Custom Asset Pack", status: "Cancelled", price: "$45.00" },
   ];
 
   return (
@@ -259,19 +259,29 @@ function DashboardOverview() {
               </TableRow>
             </TableHead>
             <TableBody>
-              {recentOrders.map((order, idx) => (
-                <TableRow key={idx} sx={{ "&:last-child td, &:last-child th": { border: 0 } }}>
-                  <TableCell sx={{ color: "white", fontWeight: 600 }}>{order.id}</TableCell>
-                  <TableCell sx={{ color: "#e2e8f0" }}>{order.name}</TableCell>
-                  <TableCell sx={{ color: "#94a3b8" }}>{order.items}</TableCell>
-                  <TableCell>
-                    <StatusBadge status={order.status} />
-                  </TableCell>
-                  <TableCell sx={{ color: "white", fontWeight: 700 }} align="right">
-                    {order.price}
+              {orders.length > 0 ? (
+                orders.map((order, idx) => (
+                  <TableRow key={idx} sx={{ "&:last-child td, &:last-child th": { border: 0 } }}>
+                    <TableCell sx={{ color: "white", fontWeight: 600 }}>{order.id}</TableCell>
+                    <TableCell sx={{ color: "#e2e8f0" }}>{order.customer}</TableCell>
+                    <TableCell sx={{ color: "#94a3b8" }}>
+                      {order.items?.map(i => `${i.name} x${i.qty}`).join(", ") || "Purchased Items"}
+                    </TableCell>
+                    <TableCell>
+                      <StatusBadge status={order.status} />
+                    </TableCell>
+                    <TableCell sx={{ color: "white", fontWeight: 700 }} align="right">
+                      {order.total}
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={5} align="center" sx={{ py: 4, color: "#64748b" }}>
+                    No recent order activity yet.
                   </TableCell>
                 </TableRow>
-              ))}
+              )}
             </TableBody>
           </Table>
         </TableContainer>

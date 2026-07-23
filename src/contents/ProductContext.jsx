@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState } from "react";
+import React, { createContext, useContext, useState, useEffect } from "react";
 import { Laptop as LaptopIcon, PhoneIphone as PhoneIcon, Headphones as HeadphonesIcon, Spa as SkincareIcon, Devices as GadgetIcon } from "@mui/icons-material";
 
 const ProductContext = createContext();
@@ -132,8 +132,17 @@ const DEFAULT_ORDERS = [
 
 export const ProductProvider = ({ children }) => {
   const [products, setProducts] = useState(DEFAULT_PRODUCTS);
-  const [orders, setOrders] = useState(DEFAULT_ORDERS);
   const [categories, setCategories] = useState(["Electronics", "Gadgets", "Skincare"]);
+
+  // Orders start clean and persist real purchases in localStorage
+  const [orders, setOrders] = useState(() => {
+    const saved = localStorage.getItem("ecommerce_real_orders");
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  useEffect(() => {
+    localStorage.setItem("ecommerce_real_orders", JSON.stringify(orders));
+  }, [orders]);
 
   const addCategory = (categoryName) => {
     const trimmed = categoryName.trim();
@@ -184,12 +193,14 @@ export const ProductProvider = ({ children }) => {
       trackingNumber: `FDX-${Math.floor(100000000 + Math.random() * 900000000)}`,
     };
 
-    setOrders([newOrder, ...orders]);
+    setOrders((prevOrders) => [newOrder, ...prevOrders]);
     return newOrder;
   };
 
   const updateOrderStatus = (orderId, newStatus) => {
-    setOrders(orders.map(o => o.id === orderId ? { ...o, status: newStatus } : o));
+    setOrders((prevOrders) =>
+      prevOrders.map((o) => (o.id === orderId ? { ...o, status: newStatus } : o))
+    );
   };
 
   return (
