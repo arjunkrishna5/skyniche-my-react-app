@@ -955,117 +955,120 @@ function UserManagement() {
             </TableHead>
             <TableBody>
               {filteredUsers.length > 0 ? (
-                filteredUsers.map((user) => (
-                  <TableRow
-                    key={user.id}
-                    sx={{
-                      "&:hover": { backgroundColor: "rgba(255, 255, 255, 0.01)" },
-                      "&:last-child td, &:last-child th": { border: 0 },
-                    }}
-                  >
-                    <TableCell>
-                      <Box display="flex" alignItems="center" gap={1.5}>
-                        <Avatar
+                filteredUsers.map((user, idx) => {
+                  const targetId = user.id || user.email || `user-${idx}`;
+                  return (
+                    <TableRow
+                      key={targetId}
+                      sx={{
+                        "&:hover": { backgroundColor: "rgba(255, 255, 255, 0.01)" },
+                        "&:last-child td, &:last-child th": { border: 0 },
+                      }}
+                    >
+                      <TableCell>
+                        <Box display="flex" alignItems="center" gap={1.5}>
+                          <Avatar
+                            sx={{
+                              width: 34,
+                              height: 34,
+                              bgcolor: user.role === "admin" ? "rgba(192, 132, 252, 0.15)" : "rgba(45, 212, 191, 0.15)",
+                              color: user.role === "admin" ? "#c084fc" : "#2dd4bf",
+                              fontSize: "0.85rem",
+                              fontWeight: 700,
+                              border: user.role === "admin" ? "1px solid rgba(192, 132, 252, 0.3)" : "1px solid rgba(45, 212, 191, 0.3)",
+                            }}
+                          >
+                            {(user.name?.[0] || "U").toUpperCase()}
+                          </Avatar>
+                          <Box>
+                            <Typography variant="body2" fontWeight={700} color="white">
+                              {user.name}
+                            </Typography>
+                            <Typography variant="caption" color="#64748b">
+                              {user.id || user.email}
+                            </Typography>
+                          </Box>
+                        </Box>
+                      </TableCell>
+
+                      <TableCell sx={{ color: "#e2e8f0" }}>{user.email}</TableCell>
+
+                      <TableCell>
+                        <Box
                           sx={{
-                            width: 34,
-                            height: 34,
-                            bgcolor: user.role === "Admin" ? "rgba(192, 132, 252, 0.15)" : "rgba(45, 212, 191, 0.15)",
-                            color: user.role === "Admin" ? "#c084fc" : "#2dd4bf",
-                            fontSize: "0.85rem",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: 0.5,
+                            px: 1.5,
+                            py: 0.4,
+                            borderRadius: "20px",
+                            fontSize: "0.75rem",
                             fontWeight: 700,
-                            border: user.role === "Admin" ? "1px solid rgba(192, 132, 252, 0.3)" : "1px solid rgba(45, 212, 191, 0.3)",
+                            bgcolor: user.role === "admin" ? "rgba(192, 132, 252, 0.1)" : "rgba(45, 212, 191, 0.1)",
+                            color: user.role === "admin" ? "#c084fc" : "#2dd4bf",
+                            border: user.role === "admin" ? "1px solid rgba(192, 132, 252, 0.2)" : "1px solid rgba(45, 212, 191, 0.2)",
                           }}
                         >
-                          {user.name[0]}
-                        </Avatar>
-                        <Box>
-                          <Typography variant="body2" fontWeight={700} color="white">
-                            {user.name}
-                          </Typography>
-                          <Typography variant="caption" color="#64748b">
-                            {user.id}
-                          </Typography>
+                          {user.role === "admin" ? <AdminIcon sx={{ fontSize: 13 }} /> : <CustomerIcon sx={{ fontSize: 13 }} />}
+                          {user.role}
                         </Box>
-                      </Box>
-                    </TableCell>
+                      </TableCell>
 
-                    <TableCell sx={{ color: "#e2e8f0" }}>{user.email}</TableCell>
+                      <TableCell sx={{ color: "#94a3b8" }}>{user.joined}</TableCell>
 
-                    <TableCell>
-                      <Box
-                        sx={{
-                          display: "inline-flex",
-                          alignItems: "center",
-                          gap: 0.5,
-                          px: 1.5,
-                          py: 0.4,
-                          borderRadius: "20px",
-                          fontSize: "0.75rem",
-                          fontWeight: 700,
-                          bgcolor: user.role === "Admin" ? "rgba(192, 132, 252, 0.1)" : "rgba(45, 212, 191, 0.1)",
-                          color: user.role === "Admin" ? "#c084fc" : "#2dd4bf",
-                          border: user.role === "Admin" ? "1px solid rgba(192, 132, 252, 0.2)" : "1px solid rgba(45, 212, 191, 0.2)",
-                        }}
-                      >
-                        {user.role === "Admin" ? <AdminIcon sx={{ fontSize: 13 }} /> : <CustomerIcon sx={{ fontSize: 13 }} />}
-                        {user.role}
-                      </Box>
-                    </TableCell>
+                      <TableCell>
+                        <Box
+                          sx={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: 0.5,
+                            px: 1.5,
+                            py: 0.4,
+                            borderRadius: "20px",
+                            fontSize: "0.75rem",
+                            fontWeight: 700,
+                            bgcolor: user.status === "Active" ? "rgba(45, 212, 191, 0.1)" : "rgba(248, 113, 113, 0.1)",
+                            color: user.status === "Active" ? "#2dd4bf" : "#f87171",
+                            border: user.status === "Active" ? "1px solid rgba(45, 212, 191, 0.2)" : "1px solid rgba(248, 113, 113, 0.2)",
+                          }}
+                        >
+                          {user.status}
+                        </Box>
+                      </TableCell>
 
-                    <TableCell sx={{ color: "#94a3b8" }}>{user.joined}</TableCell>
+                      <TableCell align="right">
+                        <Box display="flex" justifyContent="flex-end" gap={0.5}>
+                          <Tooltip title={`Switch Role to ${user.role === "admin" ? "Customer" : "Admin"}`}>
+                            <IconButton
+                              onClick={() => handleToggleRole(targetId)}
+                              sx={{ color: "#64748b", "&:hover": { color: "#c084fc" } }}
+                            >
+                              <AdminIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
 
-                    <TableCell>
-                      <Box
-                        sx={{
-                          display: "inline-flex",
-                          alignItems: "center",
-                          gap: 0.5,
-                          px: 1.5,
-                          py: 0.4,
-                          borderRadius: "20px",
-                          fontSize: "0.75rem",
-                          fontWeight: 700,
-                          bgcolor: user.status === "Active" ? "rgba(45, 212, 191, 0.1)" : "rgba(248, 113, 113, 0.1)",
-                          color: user.status === "Active" ? "#2dd4bf" : "#f87171",
-                          border: user.status === "Active" ? "1px solid rgba(45, 212, 191, 0.2)" : "1px solid rgba(248, 113, 113, 0.2)",
-                        }}
-                      >
-                        {user.status}
-                      </Box>
-                    </TableCell>
+                          <Tooltip title={user.status === "Active" ? "Suspend Account" : "Activate Account"}>
+                            <IconButton
+                              onClick={() => handleToggleStatus(targetId)}
+                              sx={{ color: "#64748b", "&:hover": { color: user.status === "Active" ? "#fbbf24" : "#2dd4bf" } }}
+                            >
+                              <BlockIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
 
-                    <TableCell align="right">
-                      <Box display="flex" justifyContent="flex-end" gap={0.5}>
-                        <Tooltip title={`Switch Role to ${user.role === "Admin" ? "Customer" : "Admin"}`}>
-                          <IconButton
-                            onClick={() => handleToggleRole(user.id)}
-                            sx={{ color: "#64748b", "&:hover": { color: "#c084fc" } }}
-                          >
-                            <AdminIcon fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
-
-                        <Tooltip title={user.status === "Active" ? "Suspend Account" : "Activate Account"}>
-                          <IconButton
-                            onClick={() => handleToggleStatus(user.id)}
-                            sx={{ color: "#64748b", "&:hover": { color: user.status === "Active" ? "#fbbf24" : "#2dd4bf" } }}
-                          >
-                            <BlockIcon fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
-
-                        <Tooltip title="Delete Account">
-                          <IconButton
-                            onClick={() => handleDeleteUser(user.id)}
-                            sx={{ color: "#64748b", "&:hover": { color: "#f87171" } }}
-                          >
-                            <DeleteIcon fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
-                      </Box>
-                    </TableCell>
-                  </TableRow>
-                ))
+                          <Tooltip title="Delete Account">
+                            <IconButton
+                              onClick={() => handleDeleteUser(targetId)}
+                              sx={{ color: "#64748b", "&:hover": { color: "#f87171" } }}
+                            >
+                              <DeleteIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                        </Box>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
               ) : (
                 <TableRow>
                   <TableCell colSpan={6} align="center" sx={{ py: 6, color: "#64748b" }}>

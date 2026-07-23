@@ -79,7 +79,7 @@ function Login() {
         isSignUp
           ? `Account created! Logged in as ${isUserAdmin ? "Admin" : "User"}.`
           : `Welcome back, ${response.user.name}! (${isUserAdmin ? "Admin Mode" : "User Mode"})`,
-        { variant: "success" }
+        { variant: "success", autoHideDuration: 1000 }
       );
 
       if (isUserAdmin) {

@@ -54,7 +54,7 @@ export default function Storefront() {
   const handleUserLogout = () => {
     handleCloseUserMenu();
     logout();
-    enqueueSnackbar("Logged out successfully.", { variant: "info" });
+    enqueueSnackbar("Logged out successfully.", { variant: "info", autoHideDuration: 1000 });
     navigate("/login");
   };
 
@@ -78,12 +78,12 @@ export default function Storefront() {
     } else {
       setCart([...cart, { ...product, qty: 1 }]);
     }
-    enqueueSnackbar(`Added "${product.name}" to cart!`, { variant: "success" });
+    enqueueSnackbar(`Added "${product.name}" to cart!`, { variant: "success", autoHideDuration: 1000 });
   };
 
   const handleRemoveFromCart = (id) => {
     setCart(cart.filter((item) => item.id !== id));
-    enqueueSnackbar("Item removed from cart.", { variant: "info" });
+    enqueueSnackbar("Item removed from cart.", { variant: "info", autoHideDuration: 1000 });
   };
 
   const totalCartCount = cart.reduce((total, item) => total + item.qty, 0);
@@ -694,7 +694,7 @@ export default function Storefront() {
                 const newOrder = placeOrder(cart, totalCartPrice, user?.name || "Sarah Jenkins");
                 setCart([]);
                 setIsCartOpen(false);
-                enqueueSnackbar(`Order ${newOrder.id} placed successfully! Tracking active.`, { variant: "success" });
+                enqueueSnackbar(`Order ${newOrder.id} placed successfully! Tracking active.`, { variant: "success", autoHideDuration: 1000 });
                 navigate("/my-orders");
               }}
               sx={{

@@ -50,7 +50,7 @@ export default function CustomerAccount() {
   const handleUserLogout = () => {
     handleCloseUserMenu();
     logout();
-    enqueueSnackbar("Logged out successfully.", { variant: "info" });
+    enqueueSnackbar("Logged out successfully.", { variant: "info", autoHideDuration: 1000 });
     navigate("/login");
   };
 
@@ -67,6 +67,7 @@ export default function CustomerAccount() {
   const handleSaveProfile = () => {
     enqueueSnackbar("Profile & Shipping Address saved successfully!", {
       variant: "success",
+      autoHideDuration: 1000,
     });
   };
 

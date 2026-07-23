@@ -7,34 +7,44 @@ const moment = require('moment');
 
 const invalidatedTokens = new Set();
 
+const bcrypt = require('bcryptjs');
+
 const signupUser = async (req, res) => {
   try {
-    const { name, email, password, profile_pic } = req.body;
+    const { name, email, password, profile_pic, role } = req.body || {};
+
+    if (!email) {
+      return res.status(400).send({ message: "Email is required" });
+    }
 
     const preUser = await Users.getUserByEmail(email);
     if (preUser) {
-      return res.status(406).send("User already exists");
+      return res.send({ status: 1, message: "User already exists" });
     }
 
-    const hashedPassword = Password.hash(password);
+    const saltRounds = 10;
+    const hashedPassword = await bcrypt.hash(password || '123456', saltRounds);
+
+    const cleanEmail = email.trim().toLowerCase();
+    const userRole = role || (cleanEmail.includes("admin") ? "admin" : "customer");
 
     const userData = {
-      name,
-      email,
+      name: name || cleanEmail.split("@")[0],
+      email: cleanEmail,
       password: hashedPassword,
-      profile_pic: profile_pic || 'https://example.com/default-avatar.jpg',
-      user_type: 3,
-      role: 'user',
+      profile_pic: profile_pic || '',
+      user_type: userRole === 'admin' ? 1 : 3,
+      role: userRole,
       status: 1,
       timestamp: Math.floor(Date.now() / 1000),
       added_by: 1,
       updated_on: Math.floor(Date.now() / 1000),
     };
 
-    const newUser = await Users.addUser(userData);
+    const newUserId = await Users.addUser(userData);
 
-    if (newUser) {
-      res.send({ status: 1, message: 'User added successfully' });
+    if (newUserId) {
+      res.send({ status: 1, message: 'User added successfully', user_id: newUserId });
     } else {
       res.status(401).send({ message: 'Failed to add user' });
     }
