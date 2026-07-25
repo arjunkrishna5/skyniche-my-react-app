@@ -24,6 +24,8 @@ import {
   Person as CustomerIcon,
   Block as BlockIcon,
   WarningAmber as WarningIcon,
+  Visibility,
+  VisibilityOff,
 } from "@mui/icons-material";
 import { useSnackbar } from "notistack";
 import { AppProvider } from "@toolpad/core/AppProvider";
@@ -911,8 +913,16 @@ function UserManagement() {
   const [search, setSearch] = useState("");
   const [openModal, setOpenModal] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState({ open: false, targetId: null, targetName: "" });
+  const [showPasswords, setShowPasswords] = useState({});
   const { enqueueSnackbar } = useSnackbar();
   const { registeredUsers, registerUser, deleteUserAccount, toggleUserStatus, toggleUserRole } = useAuth();
+
+  const toggleShowPassword = (id) => {
+    setShowPasswords((prev) => ({
+      ...prev,
+      [id]: !prev[id],
+    }));
+  };
 
   const [newUser, setNewUser] = useState({
     name: "",
@@ -1034,6 +1044,7 @@ function UserManagement() {
               <TableRow sx={{ backgroundColor: "rgba(255, 255, 255, 0.01)" }}>
                 <TableCell sx={{ color: "#64748b", fontWeight: 700 }}>User</TableCell>
                 <TableCell sx={{ color: "#64748b", fontWeight: 700 }}>Email</TableCell>
+                <TableCell sx={{ color: "#64748b", fontWeight: 700 }}>Password</TableCell>
                 <TableCell sx={{ color: "#64748b", fontWeight: 700 }}>Role</TableCell>
                 <TableCell sx={{ color: "#64748b", fontWeight: 700 }}>Joined Date</TableCell>
                 <TableCell sx={{ color: "#64748b", fontWeight: 700 }}>Status</TableCell>
@@ -1079,6 +1090,21 @@ function UserManagement() {
                       </TableCell>
 
                       <TableCell sx={{ color: "#e2e8f0" }}>{user.email}</TableCell>
+
+                      <TableCell sx={{ color: "#e2e8f0" }}>
+                        <Box display="flex" alignItems="center" gap={1}>
+                          <Typography variant="body2" sx={{ fontFamily: "monospace", letterSpacing: showPasswords[targetId] ? "normal" : "2px" }}>
+                            {showPasswords[targetId] ? (user.password || "••••••••") : "••••••••"}
+                          </Typography>
+                          <IconButton
+                            size="small"
+                            onClick={() => toggleShowPassword(targetId)}
+                            sx={{ color: showPasswords[targetId] ? "#2dd4bf" : "#64748b" }}
+                          >
+                            {showPasswords[targetId] ? <VisibilityOff sx={{ fontSize: 16 }} /> : <Visibility sx={{ fontSize: 16 }} />}
+                          </IconButton>
+                        </Box>
+                      </TableCell>
 
                       <TableCell>
                         <Box
