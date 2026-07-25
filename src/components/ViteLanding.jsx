@@ -19,9 +19,10 @@ import {
   Security as SecurityIcon,
   HeadsetMic as SupportIcon,
   ArrowForward as ArrowForwardIcon,
-  FlashOn as FlashIcon,
   CheckCircle as CheckIcon,
-  AutoAwesome as SparklesIcon
+  AutoAwesome as SparklesIcon,
+  KeyboardArrowDown as ArrowDownIcon,
+  Autorenew as ReturnIcon
 } from '@mui/icons-material';
 import { useAuth } from '../contents/AuthContext';
 import { useProducts } from '../contents/ProductContext';
@@ -31,12 +32,18 @@ export default function ViteLanding() {
   const { isAuthenticated, user } = useAuth();
   const { products } = useProducts();
 
-  const canvasRef = useRef(null);
+  const globeCanvasRef = useRef(null);
+  const [scrollY, setScrollY] = useState(0);
   const [tilt, setTilt] = useState({ x: 0, y: 0 });
 
-  // 1. LUSION.CO-INSPIRED 3D PARTICLE CONSTELLATION CANVAS ENGINE (Pure Native Canvas Math)
+  // 1. ACTIVE THEORY-INSPIRED SCROLL-DRIVEN 3D EARTH GLOBE ENGINE
   useEffect(() => {
-    const canvas = canvasRef.current;
+    const handleScroll = () => {
+      setScrollY(window.scrollY);
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+
+    const canvas = globeCanvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
 
@@ -51,88 +58,95 @@ export default function ViteLanding() {
     };
     window.addEventListener('resize', handleResize);
 
-    const mouse = { x: width / 2, y: height / 2, active: false };
-    const handlePointerMove = (e) => {
-      mouse.x = e.clientX;
-      mouse.y = e.clientY;
-      mouse.active = true;
-    };
-    window.addEventListener('mousemove', handlePointerMove);
+    // Generate 550 High-Density 3D Earth Globe Points
+    const radius = 220;
+    const globePoints = [];
+    const numLat = 24;
+    const numLon = 36;
 
-    // Initialize 130 3D Constellation Nodes
-    const numParticles = 130;
-    const particles = [];
-    for (let i = 0; i < numParticles; i++) {
-      particles.push({
-        x: Math.random() * width,
-        y: Math.random() * height,
-        z: Math.random() * 2 + 0.5, // 3D depth scale factor
-        radius: Math.random() * 2 + 1,
-        vx: (Math.random() - 0.5) * 0.8,
-        vy: (Math.random() - 0.5) * 0.8,
-        baseColor: Math.random() > 0.5 ? "rgba(45, 212, 191, " : "rgba(192, 132, 252, ",
-      });
+    for (let i = 0; i <= numLat; i++) {
+      const lat = (Math.PI * i) / numLat - Math.PI / 2;
+      for (let j = 0; j < numLon; j++) {
+        const lon = (2 * Math.PI * j) / numLon;
+        globePoints.push({
+          x: radius * Math.cos(lat) * Math.cos(lon),
+          y: radius * Math.sin(lat),
+          z: radius * Math.cos(lat) * Math.sin(lon),
+          isEquator: Math.abs(i - numLat / 2) < 1,
+        });
+      }
     }
+
+    let rotationY = 0;
 
     const render = () => {
       ctx.clearRect(0, 0, width, height);
 
-      // Draw particle nodes & magnetic connection web
-      for (let i = 0; i < particles.length; i++) {
-        const p = particles[i];
+      // Scroll Y drives 3D expansion scale & rotation speed
+      const currentScroll = window.scrollY || 0;
+      const scrollFactor = Math.min(currentScroll / 600, 1.8);
+      const scaleMultiplier = 1 + scrollFactor * 0.95; // Earth expands toward screen on scroll
+      const globeOpacity = Math.max(0.12, 1 - scrollFactor * 0.65);
 
-        // Move 3D particles
-        p.x += p.vx * p.z;
-        p.y += p.vy * p.z;
+      rotationY += 0.008 + scrollFactor * 0.015; // Scrolling accelerates 3D rotation
+      const rotationX = 0.25;
 
-        // Bounce from walls
-        if (p.x < 0 || p.x > width) p.vx *= -1;
-        if (p.y < 0 || p.y > height) p.vy *= -1;
+      const cosY = Math.cos(rotationY);
+      const sinY = Math.sin(rotationY);
+      const cosX = Math.cos(rotationX);
+      const sinX = Math.sin(rotationX);
 
-        // Magnetic mouse pull effect
-        if (mouse.active) {
-          const dx = mouse.x - p.x;
-          const dy = mouse.y - p.y;
-          const dist = Math.sqrt(dx * dx + dy * dy);
-          if (dist < 180) {
-            p.x += (dx / dist) * 0.6;
-            p.y += (dy / dist) * 0.6;
+      const projectedPoints = [];
 
-            // Draw glowing magnetic connection lines to cursor
-            ctx.beginPath();
-            ctx.moveTo(p.x, p.y);
-            ctx.lineTo(mouse.x, mouse.y);
-            ctx.strokeStyle = `${p.baseColor}${(1 - dist / 180) * 0.35})`;
-            ctx.lineWidth = 0.8 * p.z;
-            ctx.stroke();
+      // Globe Center shifts smoothly upwards on scroll
+      const centerY = height / 2.3 - scrollFactor * 120;
+
+      // 3D Matrix Projection
+      for (let i = 0; i < globePoints.length; i++) {
+        const p = globePoints[i];
+
+        let x1 = p.x * cosY - p.z * sinY;
+        let z1 = p.x * sinY + p.z * cosY;
+
+        let y2 = p.y * cosX - z1 * sinX;
+        let z2 = p.y * sinX + z1 * cosX;
+
+        const focalLength = 450;
+        const scale = (focalLength / (focalLength + z2)) * scaleMultiplier;
+
+        const projX = width / 2 + x1 * scale;
+        const projY = centerY + y2 * scale;
+
+        projectedPoints.push({ x: projX, y: projY, z: z2, scale, isEquator: p.isEquator });
+
+        // Draw 3D Globe Node
+        if (z2 < 40) {
+          ctx.beginPath();
+          ctx.arc(projX, projY, Math.max(0.6, (p.isEquator ? 2.4 : 1.5) * scale), 0, Math.PI * 2);
+          ctx.fillStyle = z2 < -30 
+            ? `rgba(45, 212, 191, ${globeOpacity})` 
+            : `rgba(192, 132, 252, ${globeOpacity * 0.5})`;
+          if (z2 < -50) {
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = "#2dd4bf";
           }
+          ctx.fill();
+          ctx.shadowBlur = 0;
         }
+      }
 
-        // Draw connections between nearby particles
-        for (let j = i + 1; j < particles.length; j++) {
-          const p2 = particles[j];
-          const dx = p.x - p2.x;
-          const dy = p.y - p2.y;
-          const dist = Math.sqrt(dx * dx + dy * dy);
-
-          if (dist < 110) {
-            ctx.beginPath();
-            ctx.moveTo(p.x, p.y);
-            ctx.lineTo(p2.x, p2.y);
-            ctx.strokeStyle = `rgba(45, 212, 191, ${(1 - dist / 110) * 0.18})`;
-            ctx.lineWidth = 0.5 * p.z;
-            ctx.stroke();
-          }
+      // Draw Arc Lines (Global Trade & Logistics Routes)
+      ctx.lineWidth = 0.9;
+      for (let i = 0; i < projectedPoints.length; i += 6) {
+        const p1 = projectedPoints[i];
+        const p2 = projectedPoints[(i + 13) % projectedPoints.length];
+        if (p1.z < 10 && p2.z < 10) {
+          ctx.beginPath();
+          ctx.moveTo(p1.x, p1.y);
+          ctx.quadraticCurveTo(width / 2, centerY - 60, p2.x, p2.y);
+          ctx.strokeStyle = `rgba(45, 212, 191, ${globeOpacity * 0.35})`;
+          ctx.stroke();
         }
-
-        // Render glowing 3D node dot
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.radius * p.z, 0, Math.PI * 2);
-        ctx.fillStyle = `${p.baseColor}0.85)`;
-        ctx.shadowBlur = 12 * p.z;
-        ctx.shadowColor = "#2dd4bf";
-        ctx.fill();
-        ctx.shadowBlur = 0;
       }
 
       animationFrameId = requestAnimationFrame(render);
@@ -141,21 +155,19 @@ export default function ViteLanding() {
     render();
 
     return () => {
+      window.removeEventListener('scroll', handleScroll);
       window.removeEventListener('resize', handleResize);
-      window.removeEventListener('mousemove', handlePointerMove);
       cancelAnimationFrame(animationFrameId);
     };
   }, []);
 
-  // 2. 3D PERSPECTIVE MOUSE TILT HANDLER FOR PRODUCT SHOWCASE
+  // 3D Perspective Mouse Tilt Handler
   const handleCardMouseMove = (e) => {
     const card = e.currentTarget;
     const rect = card.getBoundingClientRect();
     const x = e.clientX - rect.left - rect.width / 2;
     const y = e.clientY - rect.top - rect.height / 2;
-    const rotX = (-y / (rect.height / 2)) * 12; // 12 deg tilt max
-    const rotY = (x / (rect.width / 2)) * 12;
-    setTilt({ x: rotX, y: rotY });
+    setTilt({ x: (-y / (rect.height / 2)) * 10, y: (x / (rect.width / 2)) * 10 });
   };
 
   const handleCardMouseLeave = () => {
@@ -179,9 +191,9 @@ export default function ViteLanding() {
         fontFamily: "'Inter', sans-serif",
       }}
     >
-      {/* Interactive 3D Canvas Background */}
+      {/* Active Theory Scroll-Driven 3D Earth Globe Canvas */}
       <canvas
-        ref={canvasRef}
+        ref={globeCanvasRef}
         style={{
           position: "fixed",
           top: 0,
@@ -200,7 +212,7 @@ export default function ViteLanding() {
           top: 0,
           zIndex: 100,
           backdropFilter: "blur(18px)",
-          backgroundColor: "rgba(6, 9, 17, 0.8)",
+          backgroundColor: "rgba(6, 9, 17, 0.82)",
           borderBottom: "1px solid rgba(255, 255, 255, 0.08)",
           px: { xs: 2, md: 6 },
           py: 2,
@@ -209,7 +221,7 @@ export default function ViteLanding() {
           alignItems: "center",
         }}
       >
-        {/* Brand Mark */}
+        {/* Universal Brand Logo */}
         <Box display="flex" alignItems="center" gap={1.5} sx={{ cursor: "pointer" }} onClick={() => navigate("/")}>
           <Box
             sx={{
@@ -227,10 +239,10 @@ export default function ViteLanding() {
           </Box>
           <Box>
             <Typography variant="h6" fontWeight={900} letterSpacing="-0.5px" sx={{ color: "white", lineHeight: 1 }}>
-              SKYNICHE<span style={{ color: "#2dd4bf" }}>.</span>
+              AURA<span style={{ color: "#2dd4bf" }}>.</span>
             </Typography>
             <Typography variant="caption" sx={{ color: "#64748b", fontSize: "0.65rem", fontWeight: 700, letterSpacing: "1px" }}>
-              3D DIGITAL STOREFRONT
+              GLOBAL E-STORE
             </Typography>
           </Box>
         </Box>
@@ -257,7 +269,7 @@ export default function ViteLanding() {
               },
             }}
           >
-            Explore Catalog
+            Explore Shop
           </Button>
 
           {isAuthenticated ? (
@@ -277,7 +289,7 @@ export default function ViteLanding() {
                 "&:hover": { backgroundColor: "#0d9488", color: "white" },
               }}
             >
-              {user?.role?.toLowerCase() === "admin" ? "Admin Portal" : "My Account"}
+              {user?.role?.toLowerCase() === "admin" ? "Dashboard" : "My Account"}
             </Button>
           ) : (
             <Button
@@ -302,10 +314,10 @@ export default function ViteLanding() {
         </Box>
       </Box>
 
-      {/* --- 2. LUSION-STYLE HERO SECTION (COMPACT & INTERNSHIP READY) --- */}
-      <Container maxWidth="lg" sx={{ pt: { xs: 6, md: 9 }, pb: { xs: 6, md: 8 }, position: "relative", zIndex: 2 }}>
+      {/* --- 2. ACTIVE THEORY HERO SECTION WITH SCROLL INDICATOR --- */}
+      <Container maxWidth="lg" sx={{ pt: { xs: 8, md: 12 }, pb: { xs: 8, md: 10 }, position: "relative", zIndex: 2 }}>
         <Grid container spacing={5} alignItems="center">
-          {/* Left Text & CTA */}
+          {/* Left Text & CTAs */}
           <Grid item xs={12} md={7}>
             <Box>
               {/* Badge */}
@@ -327,21 +339,21 @@ export default function ViteLanding() {
                 }}
               >
                 <SparklesIcon sx={{ fontSize: 16 }} />
-                <span>Lusion-Inspired 3D E-Commerce Engine</span>
+                <span>✦ Global E-Commerce Network</span>
               </Box>
 
               {/* Headline */}
               <Typography
                 variant="h1"
                 sx={{
-                  fontSize: { xs: "2.6rem", sm: "3.6rem", md: "4.2rem" },
+                  fontSize: { xs: "2.8rem", sm: "3.8rem", md: "4.5rem" },
                   fontWeight: 900,
                   letterSpacing: "-2px",
-                  lineHeight: 1.08,
+                  lineHeight: 1.05,
                   mb: 3,
                 }}
               >
-                Experience Shopping in{" "}
+                Discover Tomorrow's Products{" "}
                 <span
                   style={{
                     background: "linear-gradient(135deg, #2dd4bf 0%, #c084fc 100%)",
@@ -349,15 +361,15 @@ export default function ViteLanding() {
                     WebkitTextFillColor: "transparent",
                   }}
                 >
-                  3D Motion.
+                  Today.
                 </span>
               </Typography>
 
-              <Typography variant="body1" sx={{ color: "#94a3b8", fontSize: { xs: "1.05rem", md: "1.2rem" }, lineHeight: 1.7, mb: 4, maxWidth: "560px" }}>
-                A high-performance digital store featuring interactive 3D particle physics, real-time MySQL database synchronization, and instant order tracking.
+              <Typography variant="body1" sx={{ color: "#94a3b8", fontSize: { xs: "1.05rem", md: "1.25rem" }, lineHeight: 1.7, mb: 4, maxWidth: "580px" }}>
+                Curated high-performance electronics, luxury skincare, and everyday lifestyle essentials delivered worldwide with real-time logistics tracking.
               </Typography>
 
-              {/* Hero Action Buttons */}
+              {/* Action Buttons */}
               <Box display="flex" flexWrap="wrap" gap={2}>
                 <Button
                   onClick={() => navigate("/shop")}
@@ -383,7 +395,7 @@ export default function ViteLanding() {
                     },
                   }}
                 >
-                  Enter Storefront
+                  Explore Shop
                 </Button>
 
                 <Button
@@ -406,29 +418,39 @@ export default function ViteLanding() {
                     },
                   }}
                 >
-                  Sign In / Register
+                  Sign In / Account
                 </Button>
               </Box>
 
-              {/* Tech Badges */}
-              <Box display="flex" alignItems="center" gap={3} mt={4} flexWrap="wrap">
-                <Box display="flex" alignItems="center" gap={1}>
-                  <CheckIcon sx={{ color: "#2dd4bf", fontSize: 18 }} />
-                  <Typography variant="caption" color="#cbd5e1" fontWeight={600}>Native WebGL / Canvas</Typography>
+              {/* Active Scroll Hint Indicator */}
+              <Box display="flex" alignItems="center" gap={1.5} mt={5}>
+                <Box
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    width: 32,
+                    height: 32,
+                    borderRadius: "50%",
+                    border: "1px solid rgba(45, 212, 191, 0.4)",
+                    color: "#2dd4bf",
+                    animation: "bounceDown 2s infinite ease-in-out",
+                    "@keyframes bounceDown": {
+                      "0%, 100%": { transform: "translateY(0)" },
+                      "50%": { transform: "translateY(6px)" },
+                    },
+                  }}
+                >
+                  <ArrowDownIcon fontSize="small" />
                 </Box>
-                <Box display="flex" alignItems="center" gap={1}>
-                  <CheckIcon sx={{ color: "#2dd4bf", fontSize: 18 }} />
-                  <Typography variant="caption" color="#cbd5e1" fontWeight={600}>XAMPP MySQL Sync</Typography>
-                </Box>
-                <Box display="flex" alignItems="center" gap={1}>
-                  <CheckIcon sx={{ color: "#2dd4bf", fontSize: 18 }} />
-                  <Typography variant="caption" color="#cbd5e1" fontWeight={600}>Fastify REST API</Typography>
-                </Box>
+                <Typography variant="caption" color="#94a3b8" fontWeight={700} letterSpacing="1px">
+                  SCROLL TO EXPAND 3D WORLD
+                </Typography>
               </Box>
             </Box>
           </Grid>
 
-          {/* Right 3D Perspective Mouse Tilt Card */}
+          {/* Right 3D Perspective Mouse Tilt Product Showcase Card */}
           <Grid item xs={12} md={5}>
             <Box style={{ perspective: "1000px" }}>
               <Paper
@@ -461,7 +483,7 @@ export default function ViteLanding() {
                 >
                   <ShoppingBagIcon sx={{ fontSize: 90, color: "rgba(45, 212, 191, 0.5)", filter: "drop-shadow(0 0 20px rgba(45, 212, 191, 0.4))" }} />
                   <Chip
-                    label="✨ 3D Interactive Card"
+                    label="🔥 Top Rated"
                     sx={{
                       position: "absolute",
                       top: 12,
@@ -501,7 +523,7 @@ export default function ViteLanding() {
                       "&:hover": { backgroundColor: "#0d9488", color: "white" },
                     }}
                   >
-                    View in Store
+                    Buy in Store
                   </Button>
                 </Box>
               </Paper>
@@ -515,9 +537,9 @@ export default function ViteLanding() {
         sx={{
           borderTop: "1px solid rgba(255, 255, 255, 0.08)",
           borderBottom: "1px solid rgba(255, 255, 255, 0.08)",
-          backgroundColor: "rgba(15, 23, 42, 0.4)",
+          backgroundColor: "rgba(15, 23, 42, 0.5)",
           backdropFilter: "blur(12px)",
-          py: 3.5,
+          py: 4,
           position: "relative",
           zIndex: 2,
         }}
@@ -525,10 +547,10 @@ export default function ViteLanding() {
         <Container maxWidth="lg">
           <Grid container spacing={3} justifyContent="space-between" alignItems="center">
             {[
-              { value: "15,000+", label: "Active Customers" },
+              { value: "15,000+", label: "Happy Customers" },
               { value: "99.8%", label: "On-Time Delivery" },
-              { value: "4.9 ★", label: "Average Rating" },
-              { value: "24 / 7", label: "Instant Support" },
+              { value: "4.9 ★", label: "Average Product Rating" },
+              { value: "24 / 7", label: "Global Customer Support" },
             ].map((stat, i) => (
               <Grid item xs={6} md={3} key={i} textAlign="center">
                 <Typography variant="h4" fontWeight={900} color="#2dd4bf" mb={0.2}>
@@ -543,19 +565,19 @@ export default function ViteLanding() {
         </Container>
       </Box>
 
-      {/* --- 4. COMPACT 3-CARD FEATURE HIGHLIGHT (NO LONG SCROLLING) --- */}
-      <Container maxWidth="lg" sx={{ py: 6, position: "relative", zIndex: 2 }}>
+      {/* --- 4. FEATURE HIGHLIGHTS GRID --- */}
+      <Container maxWidth="lg" sx={{ py: 8, position: "relative", zIndex: 2 }}>
         <Grid container spacing={3}>
           {[
-            { title: "Lightning Fast Dispatch", desc: "Automated MySQL inventory allocation and global express tracking.", icon: <ShippingIcon sx={{ fontSize: 28, color: "#2dd4bf" }} /> },
-            { title: "Bank-Grade Encryption", desc: "All user logins and checkouts are protected with SHA-256 password hashing.", icon: <SecurityIcon sx={{ fontSize: 28, color: "#c084fc" }} /> },
-            { title: "24/7 Live Ledger Sync", desc: "Real-time purchase updates synced live between Customer and Admin portals.", icon: <SupportIcon sx={{ fontSize: 28, color: "#38bdf8" }} /> },
+            { title: "Worldwide Express Delivery", desc: "Global logistics network with real-time tracking updates delivered straight to your email.", icon: <ShippingIcon sx={{ fontSize: 28, color: "#2dd4bf" }} /> },
+            { title: "256-Bit Encrypted Payments", desc: "Bank-grade checkout security protecting all customer payment methods.", icon: <SecurityIcon sx={{ fontSize: 28, color: "#c084fc" }} /> },
+            { title: "Easy 30-Day Returns", desc: "Hassle-free replacement policy and instant refund processing.", icon: <ReturnIcon sx={{ fontSize: 28, color: "#38bdf8" }} /> },
           ].map((feat, idx) => (
             <Grid item xs={12} md={4} key={idx}>
               <Paper
                 sx={{
-                  p: 3,
-                  borderRadius: "16px",
+                  p: 3.5,
+                  borderRadius: "18px",
                   backgroundColor: "rgba(15, 23, 42, 0.5)",
                   border: "1px solid rgba(255, 255, 255, 0.08)",
                   transition: "transform 0.2s ease, border-color 0.2s ease",
@@ -582,10 +604,10 @@ export default function ViteLanding() {
       <Box sx={{ borderTop: "1px solid rgba(255, 255, 255, 0.08)", py: 4, textAlign: "center", position: "relative", zIndex: 2 }}>
         <Container maxWidth="lg">
           <Typography variant="body2" color="#94a3b8" fontWeight={700} mb={0.5}>
-            SKYNICHE 3D DIGITAL STOREFRONT
+            AURA DIGITAL STOREFRONT
           </Typography>
           <Typography variant="caption" color="#64748b">
-            © 2026 Skyniche Inc. Built with Native HTML5 Canvas 3D Physics, Fastify & XAMPP MySQL.
+            © 2026 AURA Storefront Inc. All rights reserved. Express Worldwide Delivery.
           </Typography>
         </Container>
       </Box>
