@@ -198,8 +198,17 @@ export const ProductProvider = ({ children }) => {
   };
 
   const updateOrderStatus = (orderId, newStatus) => {
+    let step = 0;
+    if (newStatus === "Processing") step = 0;
+    if (newStatus === "Shipped") step = 1;
+    if (newStatus === "Out for Delivery") step = 2;
+    if (newStatus === "Delivered") step = 3;
+    if (newStatus === "Cancelled") step = -1;
+
     setOrders((prevOrders) =>
-      prevOrders.map((o) => (o.id === orderId ? { ...o, status: newStatus } : o))
+      prevOrders.map((o) =>
+        o.id === orderId ? { ...o, status: newStatus, activeStep: step } : o
+      )
     );
   };
 

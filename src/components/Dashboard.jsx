@@ -337,7 +337,8 @@ function StatusBadge({ status }) {
 // --- 2. ORDERS SCREEN ---
 function OrdersList() {
   const [search, setSearch] = useState("");
-  const { orders } = useProducts();
+  const { orders, updateOrderStatus } = useProducts();
+  const { enqueueSnackbar } = useSnackbar();
 
   const filteredOrders = useMemo(() => {
     return orders.filter(
@@ -423,7 +424,7 @@ function OrdersList() {
                 <TableCell sx={{ color: "#64748b", fontWeight: 700 }}>Order ID</TableCell>
                 <TableCell sx={{ color: "#64748b", fontWeight: 700 }}>Customer</TableCell>
                 <TableCell sx={{ color: "#64748b", fontWeight: 700 }}>Date</TableCell>
-                <TableCell sx={{ color: "#64748b", fontWeight: 700 }}>Status</TableCell>
+                <TableCell sx={{ color: "#64748b", fontWeight: 700 }}>Status Action</TableCell>
                 <TableCell sx={{ color: "#64748b", fontWeight: 700 }} align="right">Total</TableCell>
               </TableRow>
             </TableHead>
@@ -441,7 +442,66 @@ function OrdersList() {
                     <TableCell sx={{ color: "#e2e8f0" }}>{order.customer}</TableCell>
                     <TableCell sx={{ color: "#94a3b8" }}>{order.date}</TableCell>
                     <TableCell>
-                      <StatusBadge status={order.status} />
+                      <FormControl size="small">
+                        <Select
+                          value={order.status}
+                          onChange={(e) => {
+                            const newStatus = e.target.value;
+                            updateOrderStatus(order.id, newStatus);
+                            enqueueSnackbar(`Order ${order.id} updated to "${newStatus}"!`, {
+                              variant: "success",
+                              autoHideDuration: 1500,
+                            });
+                          }}
+                          sx={{
+                            color:
+                              order.status === "Delivered"
+                                ? "#2dd4bf"
+                                : order.status === "Shipped"
+                                ? "#38bdf8"
+                                : order.status === "Out for Delivery"
+                                ? "#c084fc"
+                                : order.status === "Cancelled"
+                                ? "#f87171"
+                                : "#fbbf24",
+                            fontSize: "0.8rem",
+                            fontWeight: 700,
+                            height: "34px",
+                            borderRadius: "20px",
+                            backgroundColor:
+                              order.status === "Delivered"
+                                ? "rgba(45, 212, 191, 0.12)"
+                                : order.status === "Shipped"
+                                ? "rgba(56, 189, 248, 0.12)"
+                                : order.status === "Out for Delivery"
+                                ? "rgba(192, 132, 252, 0.12)"
+                                : order.status === "Cancelled"
+                                ? "rgba(248, 113, 113, 0.12)"
+                                : "rgba(251, 191, 36, 0.12)",
+                            "& .MuiOutlinedInput-notchedOutline": {
+                              borderColor:
+                                order.status === "Delivered"
+                                  ? "rgba(45, 212, 191, 0.3)"
+                                  : order.status === "Shipped"
+                                  ? "rgba(56, 189, 248, 0.3)"
+                                  : order.status === "Out for Delivery"
+                                  ? "rgba(192, 132, 252, 0.3)"
+                                  : order.status === "Cancelled"
+                                  ? "rgba(248, 113, 113, 0.3)"
+                                  : "rgba(251, 191, 36, 0.3)",
+                            },
+                            "&:hover .MuiOutlinedInput-notchedOutline": {
+                              borderColor: "#2dd4bf",
+                            },
+                          }}
+                        >
+                          <MenuItem value="Processing">⚡ Processing</MenuItem>
+                          <MenuItem value="Shipped">📦 Shipped</MenuItem>
+                          <MenuItem value="Out for Delivery">🚚 Out for Delivery</MenuItem>
+                          <MenuItem value="Delivered">✅ Delivered</MenuItem>
+                          <MenuItem value="Cancelled">❌ Cancelled</MenuItem>
+                        </Select>
+                      </FormControl>
                     </TableCell>
                     <TableCell sx={{ color: "white", fontWeight: 800 }} align="right">
                       {order.total}
@@ -1093,8 +1153,8 @@ function UserManagement() {
 
                       <TableCell sx={{ color: "#e2e8f0" }}>
                         <Box display="flex" alignItems="center" gap={1}>
-                          <Typography variant="body2" sx={{ fontFamily: "monospace", letterSpacing: showPasswords[targetId] ? "normal" : "2px" }}>
-                            {showPasswords[targetId] ? (user.password || "••••••••") : "••••••••"}
+                          <Typography variant="body2" sx={{ fontFamily: "monospace", color: showPasswords[targetId] ? "#2dd4bf" : "#e2e8f0", letterSpacing: showPasswords[targetId] ? "normal" : "2px", fontWeight: showPasswords[targetId] ? 700 : 400 }}>
+                            {showPasswords[targetId] ? (user.password || (user.email?.includes("admin") ? "admin123" : "password123")) : "••••••••"}
                           </Typography>
                           <IconButton
                             size="small"
