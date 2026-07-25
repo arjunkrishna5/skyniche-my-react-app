@@ -19,6 +19,10 @@ import {
   MenuItem,
   Tooltip,
   IconButton,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from "@mui/material";
 import {
   ShoppingBag as ShoppingBagIcon,
@@ -28,6 +32,8 @@ import {
   CheckCircle as CheckCircleIcon,
   ArrowBack as ArrowBackIcon,
   Save as SaveIcon,
+  Cancel as CancelIcon,
+  WarningAmber as WarningIcon,
 } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import { useSnackbar } from "notistack";
@@ -40,10 +46,26 @@ export default function CustomerAccount() {
   const navigate = useNavigate();
   const { enqueueSnackbar } = useSnackbar();
   const { user, logout } = useAuth();
-  const { orders } = useProducts();
+  const { orders, updateOrderStatus } = useProducts();
 
   const [activeTab, setActiveTab] = useState(0);
   const [anchorElUser, setAnchorElUser] = useState(null);
+  const [cancelConfirm, setCancelConfirm] = useState({ open: false, orderId: null });
+
+  const promptCancelOrder = (orderId) => {
+    setCancelConfirm({ open: true, orderId });
+  };
+
+  const handleConfirmCancelOrder = () => {
+    if (cancelConfirm.orderId) {
+      updateOrderStatus(cancelConfirm.orderId, "Cancelled");
+      enqueueSnackbar(`Order ${cancelConfirm.orderId} cancelled successfully.`, {
+        variant: "info",
+        autoHideDuration: 1500,
+      });
+    }
+    setCancelConfirm({ open: false, orderId: null });
+  };
 
   const handleOpenUserMenu = (event) => setAnchorElUser(event.currentTarget);
   const handleCloseUserMenu = () => setAnchorElUser(null);
@@ -307,9 +329,33 @@ export default function CustomerAccount() {
                     </Typography>
                   </Box>
 
-                  <Typography variant="h5" fontWeight={900} color="#2dd4bf">
-                    {order.total}
-                  </Typography>
+                  <Box display="flex" alignItems="center" gap={2}>
+                    {order.status !== "Cancelled" && order.status !== "Delivered" && (
+                      <Button
+                        variant="outlined"
+                        color="error"
+                        size="small"
+                        startIcon={<CancelIcon fontSize="small" />}
+                        onClick={() => promptCancelOrder(order.id)}
+                        sx={{
+                          borderColor: "rgba(248, 113, 113, 0.4)",
+                          color: "#f87171",
+                          fontWeight: 700,
+                          borderRadius: "10px",
+                          textTransform: "none",
+                          "&:hover": {
+                            backgroundColor: "rgba(248, 113, 113, 0.1)",
+                            borderColor: "#f87171",
+                          },
+                        }}
+                      >
+                        Cancel Order
+                      </Button>
+                    )}
+                    <Typography variant="h5" fontWeight={900} color="#2dd4bf">
+                      {order.total}
+                    </Typography>
+                  </Box>
                 </Box>
 
                 {/* Progress Stepper */}
@@ -504,6 +550,54 @@ export default function CustomerAccount() {
           </Paper>
         )}
       </Container>
+
+      {/* Cancel Order Confirmation Dialog Modal */}
+      <Dialog
+        open={cancelConfirm.open}
+        onClose={() => setCancelConfirm({ open: false, orderId: null })}
+        PaperProps={{
+          sx: {
+            backgroundColor: "#0f172a",
+            border: "1px solid rgba(248, 113, 113, 0.3)",
+            borderRadius: "16px",
+            color: "white",
+            minWidth: { xs: "90%", sm: "400px" },
+          },
+        }}
+      >
+        <DialogTitle sx={{ fontWeight: 800, color: "#f87171", display: "flex", alignItems: "center", gap: 1.5 }}>
+          <WarningIcon sx={{ color: "#f87171" }} />
+          Do you want to cancel this order?
+        </DialogTitle>
+        <DialogContent sx={{ pt: 1 }}>
+          <Typography variant="body1" color="#e2e8f0">
+            Are you sure you want to cancel order <strong>"{cancelConfirm.orderId}"</strong>? This will update your order status to Cancelled.
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ p: 2.5 }}>
+          <Button
+            onClick={() => setCancelConfirm({ open: false, orderId: null })}
+            sx={{ color: "#64748b", textTransform: "none", fontWeight: 600 }}
+          >
+            No, Keep Order
+          </Button>
+          <Button
+            onClick={handleConfirmCancelOrder}
+            variant="contained"
+            sx={{
+              backgroundColor: "#f87171",
+              color: "white",
+              fontWeight: 800,
+              textTransform: "none",
+              borderRadius: "10px",
+              px: 3,
+              "&:hover": { backgroundColor: "#dc2626" },
+            }}
+          >
+            Yes, Cancel Order
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

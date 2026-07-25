@@ -123,10 +123,12 @@ const NAVIGATION = [
 function DashboardOverview() {
   const { orders, products } = useProducts();
 
-  const totalRevenue = orders.reduce((sum, o) => {
-    const val = parseFloat(String(o.total).replace("$", "").replace(",", "")) || 0;
-    return sum + val;
-  }, 0);
+  const totalRevenue = orders
+    .filter((o) => o.status === "Delivered")
+    .reduce((sum, o) => {
+      const val = parseFloat(String(o.total).replace("$", "").replace(",", "")) || 0;
+      return sum + val;
+    }, 0);
 
   const kpis = [
     {
