@@ -21,7 +21,6 @@ import {
   ArrowForward as ArrowForwardIcon,
   CheckCircle as CheckIcon,
   AutoAwesome as SparklesIcon,
-  KeyboardArrowDown as ArrowDownIcon,
   Autorenew as ReturnIcon
 } from '@mui/icons-material';
 import { useAuth } from '../contents/AuthContext';
@@ -32,18 +31,12 @@ export default function ViteLanding() {
   const { isAuthenticated, user } = useAuth();
   const { products } = useProducts();
 
-  const globeCanvasRef = useRef(null);
-  const [scrollY, setScrollY] = useState(0);
+  const canvasRef = useRef(null);
   const [tilt, setTilt] = useState({ x: 0, y: 0 });
 
-  // 1. ACTIVE THEORY-INSPIRED SCROLL-DRIVEN 3D EARTH GLOBE ENGINE
+  // LUSION-INSPIRED INTERACTIVE 3D PARTICLE CONSTELLATION NODE GRAPH CANVAS (Smoothest Background)
   useEffect(() => {
-    const handleScroll = () => {
-      setScrollY(window.scrollY);
-    };
-    window.addEventListener('scroll', handleScroll, { passive: true });
-
-    const canvas = globeCanvasRef.current;
+    const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
 
@@ -58,95 +51,87 @@ export default function ViteLanding() {
     };
     window.addEventListener('resize', handleResize);
 
-    // Generate 550 High-Density 3D Earth Globe Points
-    const radius = 220;
-    const globePoints = [];
-    const numLat = 24;
-    const numLon = 36;
+    const mouse = { x: width / 2, y: height / 2, active: false };
+    const handlePointerMove = (e) => {
+      mouse.x = e.clientX;
+      mouse.y = e.clientY;
+      mouse.active = true;
+    };
+    window.addEventListener('mousemove', handlePointerMove);
 
-    for (let i = 0; i <= numLat; i++) {
-      const lat = (Math.PI * i) / numLat - Math.PI / 2;
-      for (let j = 0; j < numLon; j++) {
-        const lon = (2 * Math.PI * j) / numLon;
-        globePoints.push({
-          x: radius * Math.cos(lat) * Math.cos(lon),
-          y: radius * Math.sin(lat),
-          z: radius * Math.cos(lat) * Math.sin(lon),
-          isEquator: Math.abs(i - numLat / 2) < 1,
-        });
-      }
+    // Initialize 130 3D Constellation Nodes
+    const numParticles = 130;
+    const particles = [];
+    for (let i = 0; i < numParticles; i++) {
+      particles.push({
+        x: Math.random() * width,
+        y: Math.random() * height,
+        z: Math.random() * 2 + 0.5, // 3D depth factor
+        radius: Math.random() * 2 + 1,
+        vx: (Math.random() - 0.5) * 0.8,
+        vy: (Math.random() - 0.5) * 0.8,
+        baseColor: Math.random() > 0.5 ? "rgba(45, 212, 191, " : "rgba(192, 132, 252, ",
+      });
     }
-
-    let rotationY = 0;
 
     const render = () => {
       ctx.clearRect(0, 0, width, height);
 
-      // Scroll Y drives 3D expansion scale & rotation speed
-      const currentScroll = window.scrollY || 0;
-      const scrollFactor = Math.min(currentScroll / 600, 1.8);
-      const scaleMultiplier = 1 + scrollFactor * 0.95; // Earth expands toward screen on scroll
-      const globeOpacity = Math.max(0.12, 1 - scrollFactor * 0.65);
+      for (let i = 0; i < particles.length; i++) {
+        const p = particles[i];
 
-      rotationY += 0.008 + scrollFactor * 0.015; // Scrolling accelerates 3D rotation
-      const rotationX = 0.25;
+        // Move 3D particles
+        p.x += p.vx * p.z;
+        p.y += p.vy * p.z;
 
-      const cosY = Math.cos(rotationY);
-      const sinY = Math.sin(rotationY);
-      const cosX = Math.cos(rotationX);
-      const sinX = Math.sin(rotationX);
+        // Bounce from walls
+        if (p.x < 0 || p.x > width) p.vx *= -1;
+        if (p.y < 0 || p.y > height) p.vy *= -1;
 
-      const projectedPoints = [];
+        // Magnetic mouse pull effect
+        if (mouse.active) {
+          const dx = mouse.x - p.x;
+          const dy = mouse.y - p.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < 180) {
+            p.x += (dx / dist) * 0.6;
+            p.y += (dy / dist) * 0.6;
 
-      // Globe Center shifts smoothly upwards on scroll
-      const centerY = height / 2.3 - scrollFactor * 120;
-
-      // 3D Matrix Projection
-      for (let i = 0; i < globePoints.length; i++) {
-        const p = globePoints[i];
-
-        let x1 = p.x * cosY - p.z * sinY;
-        let z1 = p.x * sinY + p.z * cosY;
-
-        let y2 = p.y * cosX - z1 * sinX;
-        let z2 = p.y * sinX + z1 * cosX;
-
-        const focalLength = 450;
-        const scale = (focalLength / (focalLength + z2)) * scaleMultiplier;
-
-        const projX = width / 2 + x1 * scale;
-        const projY = centerY + y2 * scale;
-
-        projectedPoints.push({ x: projX, y: projY, z: z2, scale, isEquator: p.isEquator });
-
-        // Draw 3D Globe Node
-        if (z2 < 40) {
-          ctx.beginPath();
-          ctx.arc(projX, projY, Math.max(0.6, (p.isEquator ? 2.4 : 1.5) * scale), 0, Math.PI * 2);
-          ctx.fillStyle = z2 < -30 
-            ? `rgba(45, 212, 191, ${globeOpacity})` 
-            : `rgba(192, 132, 252, ${globeOpacity * 0.5})`;
-          if (z2 < -50) {
-            ctx.shadowBlur = 10;
-            ctx.shadowColor = "#2dd4bf";
+            // Draw glowing magnetic connection lines to cursor
+            ctx.beginPath();
+            ctx.moveTo(p.x, p.y);
+            ctx.lineTo(mouse.x, mouse.y);
+            ctx.strokeStyle = `${p.baseColor}${(1 - dist / 180) * 0.35})`;
+            ctx.lineWidth = 0.8 * p.z;
+            ctx.stroke();
           }
-          ctx.fill();
-          ctx.shadowBlur = 0;
         }
-      }
 
-      // Draw Arc Lines (Global Trade & Logistics Routes)
-      ctx.lineWidth = 0.9;
-      for (let i = 0; i < projectedPoints.length; i += 6) {
-        const p1 = projectedPoints[i];
-        const p2 = projectedPoints[(i + 13) % projectedPoints.length];
-        if (p1.z < 10 && p2.z < 10) {
-          ctx.beginPath();
-          ctx.moveTo(p1.x, p1.y);
-          ctx.quadraticCurveTo(width / 2, centerY - 60, p2.x, p2.y);
-          ctx.strokeStyle = `rgba(45, 212, 191, ${globeOpacity * 0.35})`;
-          ctx.stroke();
+        // Draw connections between nearby particles
+        for (let j = i + 1; j < particles.length; j++) {
+          const p2 = particles[j];
+          const dx = p.x - p2.x;
+          const dy = p.y - p2.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+
+          if (dist < 110) {
+            ctx.beginPath();
+            ctx.moveTo(p.x, p.y);
+            ctx.lineTo(p2.x, p2.y);
+            ctx.strokeStyle = `rgba(45, 212, 191, ${(1 - dist / 110) * 0.18})`;
+            ctx.lineWidth = 0.5 * p.z;
+            ctx.stroke();
+          }
         }
+
+        // Render glowing 3D node dot
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.radius * p.z, 0, Math.PI * 2);
+        ctx.fillStyle = `${p.baseColor}0.85)`;
+        ctx.shadowBlur = 12 * p.z;
+        ctx.shadowColor = "#2dd4bf";
+        ctx.fill();
+        ctx.shadowBlur = 0;
       }
 
       animationFrameId = requestAnimationFrame(render);
@@ -155,8 +140,8 @@ export default function ViteLanding() {
     render();
 
     return () => {
-      window.removeEventListener('scroll', handleScroll);
       window.removeEventListener('resize', handleResize);
+      window.removeEventListener('mousemove', handlePointerMove);
       cancelAnimationFrame(animationFrameId);
     };
   }, []);
@@ -191,9 +176,9 @@ export default function ViteLanding() {
         fontFamily: "'Inter', sans-serif",
       }}
     >
-      {/* Active Theory Scroll-Driven 3D Earth Globe Canvas */}
+      {/* Interactive 3D Particle Constellation Graph Canvas Background */}
       <canvas
-        ref={globeCanvasRef}
+        ref={canvasRef}
         style={{
           position: "fixed",
           top: 0,
@@ -314,7 +299,7 @@ export default function ViteLanding() {
         </Box>
       </Box>
 
-      {/* --- 2. ACTIVE THEORY HERO SECTION WITH SCROLL INDICATOR --- */}
+      {/* --- 2. HERO SECTION --- */}
       <Container maxWidth="lg" sx={{ pt: { xs: 8, md: 12 }, pb: { xs: 8, md: 10 }, position: "relative", zIndex: 2 }}>
         <Grid container spacing={5} alignItems="center">
           {/* Left Text & CTAs */}
@@ -339,7 +324,7 @@ export default function ViteLanding() {
                 }}
               >
                 <SparklesIcon sx={{ fontSize: 16 }} />
-                <span>✦ Global E-Commerce Network</span>
+                <span>✦ Global Premium Collection 2026</span>
               </Box>
 
               {/* Headline */}
@@ -366,7 +351,7 @@ export default function ViteLanding() {
               </Typography>
 
               <Typography variant="body1" sx={{ color: "#94a3b8", fontSize: { xs: "1.05rem", md: "1.25rem" }, lineHeight: 1.7, mb: 4, maxWidth: "580px" }}>
-                Curated high-performance electronics, luxury skincare, and everyday lifestyle essentials delivered worldwide with real-time logistics tracking.
+                Curated high-performance electronics, luxury skincare, and everyday lifestyle essentials delivered worldwide with real-time tracking.
               </Typography>
 
               {/* Action Buttons */}
@@ -422,35 +407,25 @@ export default function ViteLanding() {
                 </Button>
               </Box>
 
-              {/* Active Scroll Hint Indicator */}
-              <Box display="flex" alignItems="center" gap={1.5} mt={5}>
-                <Box
-                  sx={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    width: 32,
-                    height: 32,
-                    borderRadius: "50%",
-                    border: "1px solid rgba(45, 212, 191, 0.4)",
-                    color: "#2dd4bf",
-                    animation: "bounceDown 2s infinite ease-in-out",
-                    "@keyframes bounceDown": {
-                      "0%, 100%": { transform: "translateY(0)" },
-                      "50%": { transform: "translateY(6px)" },
-                    },
-                  }}
-                >
-                  <ArrowDownIcon fontSize="small" />
+              {/* Trust Badges */}
+              <Box display="flex" alignItems="center" gap={3} mt={5} flexWrap="wrap">
+                <Box display="flex" alignItems="center" gap={1}>
+                  <CheckIcon sx={{ color: "#2dd4bf", fontSize: 18 }} />
+                  <Typography variant="caption" color="#cbd5e1" fontWeight={600}>Global Express Fulfillment</Typography>
                 </Box>
-                <Typography variant="caption" color="#94a3b8" fontWeight={700} letterSpacing="1px">
-                  SCROLL TO EXPAND 3D WORLD
-                </Typography>
+                <Box display="flex" alignItems="center" gap={1}>
+                  <CheckIcon sx={{ color: "#2dd4bf", fontSize: 18 }} />
+                  <Typography variant="caption" color="#cbd5e1" fontWeight={600}>Encrypted Checkout</Typography>
+                </Box>
+                <Box display="flex" alignItems="center" gap={1}>
+                  <CheckIcon sx={{ color: "#2dd4bf", fontSize: 18 }} />
+                  <Typography variant="caption" color="#cbd5e1" fontWeight={600}>30-Day Guarantee</Typography>
+                </Box>
               </Box>
             </Box>
           </Grid>
 
-          {/* Right 3D Perspective Mouse Tilt Product Showcase Card */}
+          {/* Right 3D Perspective Mouse Tilt Showcase Card */}
           <Grid item xs={12} md={5}>
             <Box style={{ perspective: "1000px" }}>
               <Paper
@@ -577,7 +552,7 @@ export default function ViteLanding() {
               <Paper
                 sx={{
                   p: 3.5,
-                  borderRadius: "18px",
+                  borderRadius: "16px",
                   backgroundColor: "rgba(15, 23, 42, 0.5)",
                   border: "1px solid rgba(255, 255, 255, 0.08)",
                   transition: "transform 0.2s ease, border-color 0.2s ease",

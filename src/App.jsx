@@ -27,9 +27,14 @@ function App() {
     <ProductProvider>
       <Router>
         <Routes>
-          {/* Homepage - Original Vite Landing Page */}
+          {/* Homepage - Redirects directly to Authentication Page (ViteLanding preserved for toggle) */}
           <Route 
             path="/" 
+            element={<Navigate to="/login" replace />} 
+          />
+          {/* Optional Landing Page Route (Uncomment anytime to re-enable) */}
+          <Route 
+            path="/landing" 
             element={<ViteLanding />} 
           />
 

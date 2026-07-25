@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Paper,
   Box,
@@ -33,6 +33,112 @@ function Login() {
 
   // State to track absolute cursor coordinates relative to screen container
   const [mouseCoords, setMouseCoords] = useState({ x: 0, y: 0 });
+  const canvasRef = useRef(null);
+
+  // Interactive 3D Particle Constellation Node Graph Canvas Effect
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+
+    let animationFrameId;
+    let width = (canvas.width = window.innerWidth);
+    let height = (canvas.height = window.innerHeight);
+
+    const handleResize = () => {
+      if (!canvas) return;
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+    };
+    window.addEventListener('resize', handleResize);
+
+    const mouse = { x: width / 2, y: height / 2, active: false };
+    const handlePointerMove = (e) => {
+      mouse.x = e.clientX;
+      mouse.y = e.clientY;
+      mouse.active = true;
+    };
+    window.addEventListener('mousemove', handlePointerMove);
+
+    // Initialize 130 3D Constellation Nodes
+    const numParticles = 130;
+    const particles = [];
+    for (let i = 0; i < numParticles; i++) {
+      particles.push({
+        x: Math.random() * width,
+        y: Math.random() * height,
+        z: Math.random() * 2 + 0.5,
+        radius: Math.random() * 2 + 1,
+        vx: (Math.random() - 0.5) * 0.8,
+        vy: (Math.random() - 0.5) * 0.8,
+        baseColor: Math.random() > 0.5 ? "rgba(45, 212, 191, " : "rgba(192, 132, 252, ",
+      });
+    }
+
+    const render = () => {
+      ctx.clearRect(0, 0, width, height);
+
+      for (let i = 0; i < particles.length; i++) {
+        const p = particles[i];
+        p.x += p.vx * p.z;
+        p.y += p.vy * p.z;
+
+        if (p.x < 0 || p.x > width) p.vx *= -1;
+        if (p.y < 0 || p.y > height) p.vy *= -1;
+
+        if (mouse.active) {
+          const dx = mouse.x - p.x;
+          const dy = mouse.y - p.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < 180) {
+            p.x += (dx / dist) * 0.6;
+            p.y += (dy / dist) * 0.6;
+
+            ctx.beginPath();
+            ctx.moveTo(p.x, p.y);
+            ctx.lineTo(mouse.x, mouse.y);
+            ctx.strokeStyle = `${p.baseColor}${(1 - dist / 180) * 0.35})`;
+            ctx.lineWidth = 0.8 * p.z;
+            ctx.stroke();
+          }
+        }
+
+        for (let j = i + 1; j < particles.length; j++) {
+          const p2 = particles[j];
+          const dx = p.x - p2.x;
+          const dy = p.y - p2.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+
+          if (dist < 110) {
+            ctx.beginPath();
+            ctx.moveTo(p.x, p.y);
+            ctx.lineTo(p2.x, p2.y);
+            ctx.strokeStyle = `rgba(45, 212, 191, ${(1 - dist / 110) * 0.18})`;
+            ctx.lineWidth = 0.5 * p.z;
+            ctx.stroke();
+          }
+        }
+
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.radius * p.z, 0, Math.PI * 2);
+        ctx.fillStyle = `${p.baseColor}0.85)`;
+        ctx.shadowBlur = 12 * p.z;
+        ctx.shadowColor = "#2dd4bf";
+        ctx.fill();
+        ctx.shadowBlur = 0;
+      }
+
+      animationFrameId = requestAnimationFrame(render);
+    };
+
+    render();
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('mousemove', handlePointerMove);
+      cancelAnimationFrame(animationFrameId);
+    };
+  }, []);
 
   const togglePasswordVisibility = () => setShowPassword((prev) => !prev);
 
@@ -107,6 +213,19 @@ function Login() {
         overflow: "hidden",
       }}
     >
+      {/* Interactive 3D Particle Constellation Node Graph Canvas Background */}
+      <canvas
+        ref={canvasRef}
+        style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          width: "100%",
+          height: "100%",
+          pointerEvents: "none",
+          zIndex: 1,
+        }}
+      />
       {/* Animated Moving Background Grid */}
       <Box
         sx={{
