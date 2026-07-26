@@ -45,7 +45,7 @@ const ORDER_STEPS = ["Order Placed", "Packed", "In Transit", "Delivered"];
 export default function CustomerAccount() {
   const navigate = useNavigate();
   const { enqueueSnackbar } = useSnackbar();
-  const { user, logout } = useAuth();
+  const { user, logout, updateUserProfile } = useAuth();
   const { orders, updateOrderStatus } = useProducts();
 
   const [activeTab, setActiveTab] = useState(0);
@@ -87,10 +87,23 @@ export default function CustomerAccount() {
     zip: "97477",
   });
 
-  const handleSaveProfile = () => {
-    enqueueSnackbar("Profile & Shipping Address saved successfully!", {
+  useEffect(() => {
+    if (user) {
+      setProfileData((prev) => ({
+        ...prev,
+        name: user.name || prev.name,
+        email: user.email || prev.email,
+      }));
+    }
+  }, [user]);
+
+  const handleSaveProfile = async () => {
+    if (updateUserProfile) {
+      await updateUserProfile(profileData.name, profileData.email);
+    }
+    enqueueSnackbar("Profile updated in MySQL database & Admin Panel!", {
       variant: "success",
-      autoHideDuration: 1000,
+      autoHideDuration: 1500,
     });
   };
 

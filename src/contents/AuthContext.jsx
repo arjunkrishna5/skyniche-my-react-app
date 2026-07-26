@@ -39,33 +39,36 @@ export const AuthProvider = ({ children }) => {
   }, [registeredUsers]);
 
   // Fetch users from MySQL database via backend if server is running
-  useEffect(() => {
-    const fetchUsersFromDB = async () => {
-      try {
-        const res = await axios.post(`${API_BASE}/webservices/users/get-all-users`);
-        const userList = Array.isArray(res.data?.data) ? res.data.data : (Array.isArray(res.data) ? res.data : []);
-        if (userList.length > 0) {
-          setRegisteredUsers((prevUsers) => {
-            return userList.map((u) => {
-              const existing = prevUsers.find((p) => p.email.toLowerCase() === u.email.toLowerCase());
-              return {
-                id: `USER-${u.id}`,
-                name: u.name,
-                email: u.email,
-                password: existing?.password || u.password || (u.email.includes("admin") ? "admin123" : "password123"),
-                role: u.role || (u.email.includes("admin") ? "admin" : "customer"),
-                joined: u.timestamp
-                  ? new Date(u.timestamp * 1000).toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" })
-                  : "Jul 2026",
-                status: u.status === 1 ? "Active" : "Suspended",
-              };
-            });
+  const fetchUsersFromDB = async () => {
+    try {
+      const res = await axios.post(`${API_BASE}/webservices/users/get-all-users`);
+      const userList = Array.isArray(res.data?.data) ? res.data.data : (Array.isArray(res.data) ? res.data : []);
+      if (userList.length > 0) {
+        setRegisteredUsers((prevUsers) => {
+          const formatted = userList.map((u) => {
+            const existing = prevUsers.find((p) => p.email.toLowerCase() === u.email.toLowerCase());
+            return {
+              id: `USER-${u.id}`,
+              name: u.name,
+              email: u.email,
+              password: existing?.password || u.password || (u.email.includes("admin") ? "admin123" : "password123"),
+              role: u.role || (u.email.includes("admin") ? "admin" : "customer"),
+              joined: u.timestamp
+                ? new Date(u.timestamp * 1000).toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" })
+                : "Jul 2026",
+              status: u.status === 1 ? "Active" : "Suspended",
+            };
           });
-        }
-      } catch (err) {
-        // Backend offline fallback - keep localStorage state
+          localStorage.setItem("ecommerce_registered_users", JSON.stringify(formatted));
+          return formatted;
+        });
       }
-    };
+    } catch (err) {
+      // Backend offline fallback - keep localStorage state
+    }
+  };
+
+  useEffect(() => {
     fetchUsersFromDB();
   }, []);
 
@@ -223,6 +226,49 @@ export const AuthProvider = ({ children }) => {
     );
   };
 
+  const updateUserProfile = async (newName, newEmail) => {
+    if (!user) return { success: false, error: "No user logged in" };
+
+    const cleanEmail = newEmail ? newEmail.trim().toLowerCase() : user.email;
+
+    const updatedUser = {
+      ...user,
+      name: newName,
+      email: cleanEmail,
+    };
+
+    setUser(updatedUser);
+
+    setRegisteredUsers((prev) =>
+      prev.map((u) =>
+        (u.email && u.email.toLowerCase() === user.email.toLowerCase()) || u.id === user.id
+          ? { ...u, name: newName, email: cleanEmail }
+          : u
+      )
+    );
+
+    sessionStorage.setItem("ecommerce_current_user", JSON.stringify(updatedUser));
+    localStorage.setItem("ecommerce_current_user", JSON.stringify(updatedUser));
+
+    const numericId = typeof user.id === "string" && user.id.includes("-") ? user.id.split("-").pop() : user.id;
+
+    try {
+      await axios.post(`${API_BASE}/webservices/users/update-user`, {
+        id: parseInt(numericId) || 1,
+        name: newName,
+        email: cleanEmail,
+        role: user.role || "customer",
+        user_type: user.role === "admin" ? 1 : 3,
+        status: 1,
+      });
+      await fetchUsersFromDB();
+    } catch (err) {
+      console.log("MySQL user profile update fallback:", err.message);
+    }
+
+    return { success: true, user: updatedUser };
+  };
+
   const logout = async () => {
     setUser(null);
     setIsAuthenticated(false);
@@ -238,6 +284,7 @@ export const AuthProvider = ({ children }) => {
         registeredUsers,
         login,
         registerUser,
+        updateUserProfile,
         deleteUserAccount,
         toggleUserStatus,
         toggleUserRole,
