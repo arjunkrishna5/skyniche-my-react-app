@@ -1,7 +1,10 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { Laptop as LaptopIcon, PhoneIphone as PhoneIcon, Headphones as HeadphonesIcon, Spa as SkincareIcon, Devices as GadgetIcon } from "@mui/icons-material";
+import axios from "axios";
+import { REST_API } from "../constants/DefaultValues";
 
 const ProductContext = createContext();
+const API_BASE = REST_API.endsWith('/') ? REST_API.slice(0, -1) : REST_API;
 
 const DEFAULT_PRODUCTS = [
   {
@@ -24,58 +27,44 @@ const DEFAULT_PRODUCTS = [
     category: "Electronics",
     price: 1199.0,
     rating: 4.8,
-    reviews: 512,
-    desc: "Forged in titanium, A17 Pro chip, customizable Action button, and 5x optical zoom camera system.",
-    badge: "Popular",
-    badgeColor: "#6366f1",
-    stock: 24,
+    reviews: 289,
+    desc: "Forged in titanium, A17 Pro chip, customizable Action button, 48MP main camera.",
+    badge: "Hot",
+    badgeColor: "#fbbf24",
+    stock: 25,
     status: "In Stock",
-    icon: <PhoneIcon sx={{ fontSize: 32, color: "#6366f1" }} />,
+    icon: <PhoneIcon sx={{ fontSize: 32, color: "#fbbf24" }} />,
   },
   {
     id: "PROD-103",
-    name: "Sony WH-1000XM5 Wireless",
+    name: "Sony WH-1000XM5 Wireless Headphones",
     category: "Gadgets",
     price: 399.0,
-    rating: 4.9,
-    reviews: 289,
-    desc: "Industry-leading noise canceling with 2 processors, 8 microphones, and crystal-clear hands-free calling.",
-    badge: "Noise Cancelling",
-    badgeColor: "#c084fc",
-    stock: 5,
+    rating: 4.7,
+    reviews: 198,
+    desc: "Industry-leading noise canceling, 30-hour battery life, ultra-comfortable lightweight design.",
+    badge: "Popular",
+    badgeColor: "#38bdf8",
+    stock: 4,
     status: "Low Stock",
-    icon: <HeadphonesIcon sx={{ fontSize: 32, color: "#c084fc" }} />,
+    icon: <HeadphonesIcon sx={{ fontSize: 32, color: "#38bdf8" }} />,
   },
   {
     id: "PROD-104",
     name: "Hydrating Glow SPF 50 Sunscreen",
     category: "Skincare",
     price: 28.0,
-    rating: 4.7,
-    reviews: 184,
-    desc: "Broad spectrum UVA/UVB protection enriched with hyaluronic acid and niacinamide for daily glow.",
-    badge: "Skin Shield",
-    badgeColor: "#fbbf24",
-    stock: 140,
+    rating: 4.9,
+    reviews: 512,
+    desc: "Weightless, non-comedogenic daily sunscreen infused with Hyaluronic Acid and Niacinamide.",
+    badge: "Best Seller",
+    badgeColor: "#c084fc",
+    stock: 50,
     status: "In Stock",
-    icon: <SkincareIcon sx={{ fontSize: 32, color: "#fbbf24" }} />,
+    icon: <SkincareIcon sx={{ fontSize: 32, color: "#c084fc" }} />,
   },
   {
     id: "PROD-105",
-    name: "Ultra HD Smartwatch Series 9",
-    category: "Gadgets",
-    price: 429.0,
-    rating: 4.8,
-    reviews: 195,
-    desc: "Advanced health sensors, ECG app, Always-On Retina display, and precision GPS workout tracking.",
-    badge: "Fitness Tech",
-    badgeColor: "#38bdf8",
-    stock: 3,
-    status: "Low Stock",
-    icon: <GadgetIcon sx={{ fontSize: 32, color: "#38bdf8" }} />,
-  },
-  {
-    id: "PROD-106",
     name: "Vitamin C Radiance Serum",
     category: "Skincare",
     price: 34.5,
@@ -134,6 +123,34 @@ export const ProductProvider = ({ children }) => {
   const [products, setProducts] = useState(DEFAULT_PRODUCTS);
   const [categories, setCategories] = useState(["Electronics", "Gadgets", "Skincare"]);
 
+  // Fetch Products directly from MySQL Database via Fastify Backend API
+  useEffect(() => {
+    const fetchProductsFromDB = async () => {
+      try {
+        const res = await axios.post(`${API_BASE}/webservices/products/get-all-products`);
+        if (res.data?.success && Array.isArray(res.data.data) && res.data.data.length > 0) {
+          const dbProducts = res.data.data.map((p) => ({
+            id: `PROD-${p.id}`,
+            name: p.name,
+            category: p.category,
+            price: parseFloat(p.price) || 0,
+            rating: 4.9,
+            reviews: 15,
+            desc: p.desc,
+            badge: "MySQL Sync",
+            badgeColor: "#2dd4bf",
+            stock: p.stock,
+            status: p.status,
+          }));
+          setProducts(dbProducts);
+        }
+      } catch (err) {
+        console.log("Products DB fetch fallback:", err.message);
+      }
+    };
+    fetchProductsFromDB();
+  }, []);
+
   // Orders start clean and persist real purchases in localStorage
   const [orders, setOrders] = useState(() => {
     const saved = localStorage.getItem("ecommerce_real_orders");
@@ -151,15 +168,15 @@ export const ProductProvider = ({ children }) => {
     }
   };
 
-  const addProduct = (newProd) => {
+  const addProduct = async (newProd) => {
     const formattedProd = {
       id: `PROD-${100 + products.length + 1}`,
       name: newProd.name,
-      category: newProd.category,
+      category: newProd.category || "General",
       price: parseFloat(newProd.price) || 0,
       rating: 5.0,
       reviews: 1,
-      desc: newProd.desc || `${newProd.name} - high quality ${newProd.category.toLowerCase()} item.`,
+      desc: newProd.desc || `${newProd.name} - high quality ${newProd.category || 'general'} item.`,
       badge: "New Item",
       badgeColor: "#2dd4bf",
       stock: parseInt(newProd.stock) || 10,
@@ -171,10 +188,33 @@ export const ProductProvider = ({ children }) => {
     }
 
     setProducts([formattedProd, ...products]);
+
+    // Sync insertion to MySQL database table 'products'
+    try {
+      const res = await axios.post(`${API_BASE}/webservices/products/add-product`, {
+        name: newProd.name,
+        category: newProd.category || "General",
+        price: parseFloat(newProd.price) || 0,
+        stock: parseInt(newProd.stock) || 10,
+        desc: newProd.desc || `${newProd.name} - high quality item.`,
+      });
+      if (res.data?.data?.id) {
+        formattedProd.id = `PROD-${res.data.data.id}`;
+      }
+    } catch (err) {
+      console.error("Failed to insert product into MySQL database:", err);
+    }
   };
 
-  const deleteProduct = (id) => {
-    setProducts(products.filter((p) => p.id !== id));
+  const deleteProduct = async (id) => {
+    setProducts((prev) => prev.filter((p) => p.id !== id));
+
+    // Sync deletion to MySQL database table 'products'
+    try {
+      await axios.post(`${API_BASE}/webservices/products/delete-product`, { id });
+    } catch (err) {
+      console.error("Failed to delete product from MySQL database:", err);
+    }
   };
 
   const placeOrder = (cartItems, totalAmount, customerName = "Customer") => {
