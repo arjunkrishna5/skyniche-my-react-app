@@ -217,10 +217,11 @@ export const ProductProvider = ({ children }) => {
     }
   };
 
-  const placeOrder = (cartItems, totalAmount, customerName = "Customer") => {
+  const placeOrder = (cartItems, totalAmount, customerName = "Customer", userEmail = "") => {
     const newOrder = {
       id: `#ORD-${Math.floor(1000 + Math.random() * 9000)}`,
       customer: customerName,
+      userEmail: userEmail ? userEmail.toLowerCase() : "",
       date: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
       total: `$${totalAmount.toFixed(2)}`,
       status: "Processing",

@@ -281,9 +281,42 @@ export default function CustomerAccount() {
         {/* TAB 0: MY ORDERS */}
         {activeTab === 0 && (
           <Box display="flex" flexDirection="column" gap={3.5}>
-            {orders.map((order) => (
-              <Paper
-                key={order.id}
+            {(() => {
+              const userOrders = orders.filter((o) => {
+                if (user?.email && o.userEmail) {
+                  return o.userEmail.toLowerCase() === user.email.toLowerCase();
+                }
+                if (user?.name && o.customer) {
+                  return o.customer.toLowerCase() === user.name.toLowerCase();
+                }
+                return true;
+              });
+
+              if (userOrders.length === 0) {
+                return (
+                  <Paper
+                    sx={{
+                      p: 4,
+                      textAlign: "center",
+                      borderRadius: "20px",
+                      backgroundColor: "rgba(15, 23, 42, 0.4)",
+                      border: "1px solid rgba(255, 255, 255, 0.08)",
+                      color: "#64748b",
+                    }}
+                  >
+                    <Typography variant="h6" fontWeight={700} color="#94a3b8" mb={1}>
+                      No Orders Placed Yet
+                    </Typography>
+                    <Typography variant="body2">
+                      When you purchase products from the store, your order tracking details will appear here.
+                    </Typography>
+                  </Paper>
+                );
+              }
+
+              return userOrders.map((order) => (
+                <Paper
+                  key={order.id}
                 sx={{
                   p: 3.5,
                   borderRadius: "20px",
@@ -424,7 +457,8 @@ export default function CustomerAccount() {
                   ))}
                 </Grid>
               </Paper>
-            ))}
+              ));
+            })()}
           </Box>
         )}
 

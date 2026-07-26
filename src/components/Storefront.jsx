@@ -44,9 +44,30 @@ export default function Storefront() {
 
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
-  const [cart, setCart] = useState([]);
+  const [cart, setCart] = useState(() => {
+    if (!user?.email) return [];
+    const saved = localStorage.getItem(`ecommerce_cart_${user.email.toLowerCase()}`);
+    return saved ? JSON.parse(saved) : [];
+  });
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [anchorElUser, setAnchorElUser] = useState(null);
+
+  // Sync isolated cart state whenever logged in user changes
+  useEffect(() => {
+    if (user?.email) {
+      const saved = localStorage.getItem(`ecommerce_cart_${user.email.toLowerCase()}`);
+      setCart(saved ? JSON.parse(saved) : []);
+    } else {
+      setCart([]);
+    }
+  }, [user?.email]);
+
+  // Persist user-specific cart state to localStorage
+  useEffect(() => {
+    if (user?.email) {
+      localStorage.setItem(`ecommerce_cart_${user.email.toLowerCase()}`, JSON.stringify(cart));
+    }
+  }, [cart, user?.email]);
 
   const handleOpenUserMenu = (event) => setAnchorElUser(event.currentTarget);
   const handleCloseUserMenu = () => setAnchorElUser(null);
@@ -691,7 +712,7 @@ export default function Storefront() {
               variant="contained"
               endIcon={<ArrowForwardIcon />}
               onClick={() => {
-                const newOrder = placeOrder(cart, totalCartPrice, user?.name || "Sarah Jenkins");
+                const newOrder = placeOrder(cart, totalCartPrice, user?.name || "Customer", user?.email || "");
                 setCart([]);
                 setIsCartOpen(false);
                 enqueueSnackbar(`Order ${newOrder.id} placed successfully! Tracking active.`, { variant: "success", autoHideDuration: 1000 });
