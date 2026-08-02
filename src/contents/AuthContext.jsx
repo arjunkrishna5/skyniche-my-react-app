@@ -60,6 +60,17 @@ export const AuthProvider = ({ children }) => {
             };
           });
           localStorage.setItem("ecommerce_registered_users", JSON.stringify(formatted));
+          // Live Sync Active Logged In User Role across tabs
+          if (user) {
+            const dbMatch = formatted.find((u) => u.email.toLowerCase() === user.email.toLowerCase());
+            if (dbMatch && dbMatch.role !== user.role) {
+              const updatedUser = { ...user, role: dbMatch.role };
+              setUser(updatedUser);
+              sessionStorage.setItem("ecommerce_current_user", JSON.stringify(updatedUser));
+              localStorage.setItem("ecommerce_current_user", JSON.stringify(updatedUser));
+            }
+          }
+
           return formatted;
         });
       }
@@ -70,7 +81,10 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     fetchUsersFromDB();
-  }, []);
+    const handleFocus = () => fetchUsersFromDB();
+    window.addEventListener("focus", handleFocus);
+    return () => window.removeEventListener("focus", handleFocus);
+  }, [user]);
 
   const login = async (email, password) => {
     try {

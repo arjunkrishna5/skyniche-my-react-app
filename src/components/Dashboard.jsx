@@ -1768,8 +1768,18 @@ export default function DashboardLayoutBasic() {
   const { logout, user } = useAuth();
   const navigate = useNavigate();
 
+  const userRole = (user?.role || "customer").toLowerCase();
+
+  const filteredNavigation = useMemo(() => {
+    if (userRole === "admin" || (user?.email && user.email.includes("admin"))) {
+      return NAVIGATION;
+    }
+    // Hide Users tab for Editor & Viewer roles to avoid confusion
+    return NAVIGATION.filter((item) => item.segment !== "users");
+  }, [userRole, user?.email]);
+
   const [anchorElUser, setAnchorElUser] = useState(null);
-  const [pathname, setPathname] = useState("/dashboard");
+  const [pathname, setPathname] = useState(userRole === "editor" ? "/products" : "/dashboard");
 
   const router = useMemo(() => {
     return {
@@ -1836,7 +1846,7 @@ export default function DashboardLayoutBasic() {
 
   return (
     <AppProvider
-      navigation={NAVIGATION}
+      navigation={filteredNavigation}
       router={router}
       theme={darkTheme}
     >
