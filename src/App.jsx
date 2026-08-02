@@ -13,15 +13,18 @@ const ProtectedRoute = ({ children }) => {
   return isAuthenticated ? children : <Navigate to="/login" replace />;
 };
 
-const AdminRoute = ({ children }) => {
+const StaffRoute = ({ children }) => {
   const { isAuthenticated, user } = useAuth();
   if (!isAuthenticated) return <Navigate to="/login" replace />;
-  if (user?.role?.toLowerCase() !== "admin") return <Navigate to="/shop" replace />;
+  const role = user?.role?.toLowerCase();
+  const isStaff = role === "admin" || role === "editor" || role === "viewer" || (user?.email && user.email.includes("admin"));
+  if (!isStaff) return <Navigate to="/shop" replace />;
   return children;
 };
 
 function App() {
   const { isAuthenticated, user } = useAuth();
+  const isStaff = user?.role?.toLowerCase() === "admin" || user?.role?.toLowerCase() === "editor" || user?.role?.toLowerCase() === "viewer";
 
   return (
     <ProductProvider>
@@ -69,18 +72,18 @@ function App() {
               !isAuthenticated ? (
                 <Login />
               ) : (
-                <Navigate to={user?.role?.toLowerCase() === "admin" ? "/dashboard" : "/shop"} replace />
+                <Navigate to={isStaff ? "/dashboard" : "/shop"} replace />
               )
             } 
           />
           
-          {/* Protected Admin Dashboard Route */}
+          {/* Protected Dashboard Route */}
           <Route 
             path="/dashboard" 
             element={
-              <AdminRoute>
+              <StaffRoute>
                 <Dashboard />
-              </AdminRoute>
+              </StaffRoute>
             } 
           />
 
