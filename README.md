@@ -1,16 +1,87 @@
-# React + Vite
+# 🛒 Nexus E-Commerce & Management Platform
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+A full-stack modern E-Commerce web application built with **React**, **Vite**, **Material-UI**, **Fastify**, and **MySQL**.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## 🌟 Key Features
 
-## React Compiler
+* 🛒 **Live Storefront & Catalog**: Browse products, search in real-time, filter categories, and add items to cart.
+* 🔒 **Role-Based Access Control (RBAC)**:
+  * ⚡ **Admin (Full Access)**: Manage users, change roles, add/edit/delete products, view analytics reports.
+  * ✏️ **Editor (Read & Edit)**: Add new products and update categories. Delete buttons and User management are restricted.
+  * 👁️ **Viewer (Read Only)**: Read-only access to products and reports. Add/Delete actions are hidden.
+* 📦 **Per-User Cart & Order History**: User shopping carts and placed orders are strictly isolated per user account.
+* 🔄 **Real-Time MySQL Database Sync**: All user accounts, products, and order status updates sync directly with MySQL (`skyniche` database).
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+---
 
-## Expanding the Oxlint configuration
+## 🛠️ Tech Stack
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.
+* **Frontend**: React 18, Vite, Material-UI (MUI v5), React Router v6, Axios
+* **Backend**: Node.js, Fastify, Sequelize ORM
+* **Database**: MySQL (via XAMPP / phpMyAdmin on port 3306)
+
+---
+
+## 🚀 Step-by-Step Setup & How to Run
+
+### 1️⃣ Prerequisite: Start XAMPP MySQL
+1. Open **XAMPP Control Panel**.
+2. Click **Start** next to **MySQL** (and **Apache**).
+3. Open [http://localhost/phpmyadmin](http://localhost/phpmyadmin) in your browser.
+4. Create a database named **`skyniche`** (if not created yet).
+
+---
+
+### 2️⃣ Start Backend API Server (Terminal 1)
+
+Open your first terminal and run:
+
+```cmd
+cd backend
+node server.js
+```
+
+> 🟢 **Backend Output**: `Server is running on port 4000` | `Database connected successfully to MySQL on port 3306!`
+
+---
+
+### 3️⃣ Start Frontend React Application (Terminal 2)
+
+Open a second terminal window and run:
+
+```cmd
+npm run dev
+```
+
+> 🟢 **Frontend Output**: `Local: http://localhost:5173/`
+
+---
+
+## 🌐 Application Links
+
+* 🏪 **Storefront / User Login**: [http://localhost:5173](http://localhost:5173)
+* 📊 **Admin / Staff Dashboard**: [http://localhost:5173/dashboard](http://localhost:5173/dashboard)
+* 🗄️ **phpMyAdmin Database**: [http://localhost/phpmyadmin](http://localhost/phpmyadmin) (*Database: `skyniche`*)
+
+---
+
+## 📁 Project Structure
+
+```text
+my-react-app/
+├── backend/                  # Fastify Node.js Backend API
+│   ├── config/               # Sequelize MySQL DB Connection
+│   ├── controllers/          # User, Product, & Auth Controllers
+│   ├── models/               # Sequelize Data Models (User, Product, Order)
+│   ├── routes/               # Fastify API Endpoint Routes
+│   └── server.js             # Main Backend Server Entrypoint
+├── src/                      # React Frontend Application
+│   ├── components/           # UI Views (Storefront, CustomerAccount, Dashboard, Login)
+│   ├── contents/             # React Context Providers (AuthContext, ProductContext)
+│   ├── App.jsx               # Main React Router & Protected Route Guards
+│   └── main.jsx              # React DOM Rendering Entrypoint
+├── .gitignore                # Environment & Dependency Ignores
+└── README.md                 # Project Documentation
+```
