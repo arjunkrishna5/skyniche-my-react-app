@@ -215,15 +215,36 @@ export const AuthProvider = ({ children }) => {
     );
   };
 
-  const toggleUserRole = (targetId) => {
-    if (!targetId) return;
+  const changeUserRole = async (targetId, newRole) => {
+    if (!targetId || !newRole) return;
     setRegisteredUsers((prev) =>
       prev.map((u) =>
         u.id === targetId || u.email === targetId
-          ? { ...u, role: u.role === "admin" ? "customer" : "admin" }
+          ? { ...u, role: newRole }
           : u
       )
     );
+
+    const numericId = typeof targetId === "string" && targetId.includes("-") ? targetId.split("-").pop() : targetId;
+    const targetUser = registeredUsers.find((u) => u.id === targetId || u.email === targetId);
+
+    try {
+      await axios.post(`${API_BASE}/webservices/users/update-user`, {
+        id: parseInt(numericId) || 1,
+        name: targetUser?.name || "User",
+        email: targetUser?.email || "",
+        role: newRole,
+        user_type: newRole === "admin" ? 1 : newRole === "editor" ? 2 : 3,
+        status: 1,
+      });
+      await fetchUsersFromDB();
+    } catch (err) {
+      console.log("Role update MySQL fallback:", err.message);
+    }
+  };
+
+  const toggleUserRole = (targetId) => {
+    changeUserRole(targetId, "admin");
   };
 
   const updateUserProfile = async (newName, newEmail) => {
@@ -288,6 +309,7 @@ export const AuthProvider = ({ children }) => {
         deleteUserAccount,
         toggleUserStatus,
         toggleUserRole,
+        changeUserRole,
         logout,
       }}
     >

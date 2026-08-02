@@ -534,6 +534,9 @@ function ProductsManagement() {
   const [deleteConfirm, setDeleteConfirm] = useState({ open: false, targetId: null, targetName: "" });
   const { enqueueSnackbar } = useSnackbar();
   const { products, categories, addCategory, addProduct, deleteProduct } = useProducts();
+  const { user } = useAuth();
+  const canEdit = user?.role !== "viewer";
+  const canDelete = user?.role === "admin" || user?.role === "customer" || !user?.role;
 
   const [newProduct, setNewProduct] = useState({
     name: "",
@@ -632,50 +635,51 @@ function ProductsManagement() {
           }}
         />
 
-        <Box display="flex" gap={1.5}>
-          <Button
-            variant="outlined"
-            startIcon={<AddIcon />}
-            onClick={handleOpenCategoryModal}
-            sx={{
-              color: "#2dd4bf",
-              borderColor: "rgba(45, 212, 191, 0.3)",
-              fontWeight: 700,
-              textTransform: "none",
-              borderRadius: "10px",
-              px: 2,
-              py: 1,
-              "&:hover": {
-                borderColor: "#2dd4bf",
-                backgroundColor: "rgba(45, 212, 191, 0.08)",
-              },
-            }}
-          >
-            Add Category
-          </Button>
+        {canEdit && (
+          <Box display="flex" gap={1.5}>
+            <Button
+              variant="outlined"
+              onClick={handleOpenCategoryModal}
+              sx={{
+                color: "#2dd4bf",
+                borderColor: "rgba(45, 212, 191, 0.3)",
+                fontWeight: 700,
+                textTransform: "none",
+                borderRadius: "10px",
+                px: 2,
+                py: 1,
+                "&:hover": {
+                  borderColor: "#2dd4bf",
+                  backgroundColor: "rgba(45, 212, 191, 0.08)",
+                },
+              }}
+            >
+              Add Category
+            </Button>
 
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={handleOpenModal}
-            sx={{
-              backgroundColor: "#2dd4bf",
-              color: "#090d16",
-              fontWeight: 800,
-              textTransform: "none",
-              borderRadius: "10px",
-              px: 2.5,
-              py: 1,
-              boxShadow: "0 4px 15px rgba(45, 212, 191, 0.25)",
-              "&:hover": {
-                backgroundColor: "#0d9488",
-                color: "white",
-              },
-            }}
-          >
-            Add Product
-          </Button>
-        </Box>
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={handleOpenModal}
+              sx={{
+                backgroundColor: "#2dd4bf",
+                color: "#090d16",
+                fontWeight: 800,
+                textTransform: "none",
+                borderRadius: "10px",
+                px: 2.5,
+                py: 1,
+                boxShadow: "0 4px 15px rgba(45, 212, 191, 0.25)",
+                "&:hover": {
+                  backgroundColor: "#0d9488",
+                  color: "white",
+                },
+              }}
+            >
+              Add Product
+            </Button>
+          </Box>
+        )}
       </Box>
 
       {/* Products Table */}
@@ -719,14 +723,20 @@ function ProductsManagement() {
                       {typeof prod.price === "number" ? `$${prod.price.toFixed(2)}` : prod.price}
                     </TableCell>
                     <TableCell align="right">
-                      <Tooltip title="Delete Product">
-                        <IconButton
-                          onClick={() => promptDeleteProduct(prod)}
-                          sx={{ color: "#64748b", "&:hover": { color: "#f87171" } }}
-                        >
-                          <DeleteIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
+                      {canDelete ? (
+                        <Tooltip title="Delete Product">
+                          <IconButton
+                            onClick={() => promptDeleteProduct(prod)}
+                            sx={{ color: "#64748b", "&:hover": { color: "#f87171" } }}
+                          >
+                            <DeleteIcon fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                      ) : (
+                        <Typography variant="caption" sx={{ color: "#64748b", fontStyle: "italic" }}>
+                          No Delete Permission
+                        </Typography>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))
@@ -1169,24 +1179,56 @@ function UserManagement() {
                       </TableCell>
 
                       <TableCell>
-                        <Box
-                          sx={{
-                            display: "inline-flex",
-                            alignItems: "center",
-                            gap: 0.5,
-                            px: 1.5,
-                            py: 0.4,
-                            borderRadius: "20px",
-                            fontSize: "0.75rem",
-                            fontWeight: 700,
-                            bgcolor: user.role === "admin" ? "rgba(192, 132, 252, 0.1)" : "rgba(45, 212, 191, 0.1)",
-                            color: user.role === "admin" ? "#c084fc" : "#2dd4bf",
-                            border: user.role === "admin" ? "1px solid rgba(192, 132, 252, 0.2)" : "1px solid rgba(45, 212, 191, 0.2)",
-                          }}
-                        >
-                          {user.role === "admin" ? <AdminIcon sx={{ fontSize: 13 }} /> : <CustomerIcon sx={{ fontSize: 13 }} />}
-                          {user.role}
-                        </Box>
+                        <FormControl size="small">
+                          <Select
+                            value={user.role || "customer"}
+                            onChange={(e) => {
+                              const newRole = e.target.value;
+                              changeUserRole(targetId, newRole);
+                              enqueueSnackbar(`User ${user.name} permission updated to "${newRole}"!`, {
+                                variant: "success",
+                                autoHideDuration: 1500,
+                              });
+                            }}
+                            sx={{
+                              color:
+                                user.role === "admin"
+                                  ? "#c084fc"
+                                  : user.role === "editor"
+                                  ? "#38bdf8"
+                                  : user.role === "viewer"
+                                  ? "#fbbf24"
+                                  : "#2dd4bf",
+                              fontSize: "0.8rem",
+                              fontWeight: 700,
+                              height: "34px",
+                              borderRadius: "20px",
+                              backgroundColor:
+                                user.role === "admin"
+                                  ? "rgba(192, 132, 252, 0.12)"
+                                  : user.role === "editor"
+                                  ? "rgba(56, 189, 248, 0.12)"
+                                  : user.role === "viewer"
+                                  ? "rgba(251, 191, 36, 0.12)"
+                                  : "rgba(45, 212, 191, 0.12)",
+                              "& .MuiOutlinedInput-notchedOutline": {
+                                borderColor:
+                                  user.role === "admin"
+                                    ? "rgba(192, 132, 252, 0.3)"
+                                    : user.role === "editor"
+                                    ? "rgba(56, 189, 248, 0.3)"
+                                    : user.role === "viewer"
+                                    ? "rgba(251, 191, 36, 0.3)"
+                                    : "rgba(45, 212, 191, 0.3)",
+                              },
+                            }}
+                          >
+                            <MenuItem value="admin">⚡ Admin (Full Access)</MenuItem>
+                            <MenuItem value="editor">✏️ Editor (Read & Edit)</MenuItem>
+                            <MenuItem value="viewer">👁️ Viewer (Read Only)</MenuItem>
+                            <MenuItem value="customer">👤 Customer</MenuItem>
+                          </Select>
+                        </FormControl>
                       </TableCell>
 
                       <TableCell sx={{ color: "#94a3b8" }}>{user.joined}</TableCell>
