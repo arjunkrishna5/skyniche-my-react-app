@@ -80,27 +80,6 @@ fastify.listen({ port: PORT, host: "0.0.0.0" }, async (err) => {
       console.log("Initial default products seeded into MySQL database table 'products'!");
     }
 
-    const bcrypt = require("bcrypt");
-    const userCount = await User.count();
-    if (userCount < 3) {
-      const hashedPass = await bcrypt.hash("password123", 10);
-      const hashedAdmin = await bcrypt.hash("admin123", 10);
-      const now = Math.floor(Date.now() / 1000);
-
-      const demoUsers = [
-        { name: "System Admin", email: "admin@example.com", password: hashedAdmin, role: "admin", user_type: 1, status: 1, timestamp: now, updated_on: now },
-        { name: "Content Editor", email: "editor@example.com", password: hashedPass, role: "editor", user_type: 2, status: 1, timestamp: now, updated_on: now },
-        { name: "Read-Only Viewer", email: "viewer@example.com", password: hashedPass, role: "viewer", user_type: 3, status: 1, timestamp: now, updated_on: now },
-      ];
-
-      for (const u of demoUsers) {
-        const exists = await User.findOne({ where: { email: u.email } });
-        if (!exists) {
-          await User.create(u);
-        }
-      }
-      console.log("Initial demo user accounts seeded into MySQL database table 'users'!");
-    }
   } catch (dbErr) {
     console.error("Database connection error:", dbErr.message);
   }

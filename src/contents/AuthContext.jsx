@@ -104,7 +104,7 @@ export const AuthProvider = ({ children }) => {
             id: u.id || u.user_id || `USER-${Math.floor(100 + Math.random() * 900)}`,
             name: u.name || (isAdmin ? "Admin User" : cleanEmail.split("@")[0].replace(".", " ")),
             email: cleanEmail,
-            role: isAdmin ? "admin" : (u.role || "customer"),
+            role: u.role || (isAdmin ? "admin" : "customer"),
             profile_pic: u.profile_pic || "",
           };
 
@@ -134,7 +134,7 @@ export const AuthProvider = ({ children }) => {
         id: registeredAccount?.id || `USER-${Math.floor(100 + Math.random() * 900)}`,
         name: registeredAccount?.name || (isAdmin ? "Admin User" : cleanEmail.split("@")[0].replace(".", " ")),
         email: cleanEmail,
-        role: isAdmin ? "admin" : (registeredAccount?.role || "customer"),
+        role: registeredAccount?.role || (isAdmin ? "admin" : "customer"),
         profile_pic: "",
       };
 
@@ -224,6 +224,13 @@ export const AuthProvider = ({ children }) => {
           : u
       )
     );
+
+    if (user && (user.id === targetId || user.email === targetId)) {
+      const updatedUser = { ...user, role: newRole };
+      setUser(updatedUser);
+      sessionStorage.setItem("ecommerce_current_user", JSON.stringify(updatedUser));
+      localStorage.setItem("ecommerce_current_user", JSON.stringify(updatedUser));
+    }
 
     const numericId = typeof targetId === "string" && targetId.includes("-") ? targetId.split("-").pop() : targetId;
     const targetUser = registeredUsers.find((u) => u.id === targetId || u.email === targetId);

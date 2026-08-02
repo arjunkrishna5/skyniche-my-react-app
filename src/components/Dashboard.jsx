@@ -987,7 +987,7 @@ function UserManagement() {
   const [deleteConfirm, setDeleteConfirm] = useState({ open: false, targetId: null, targetName: "" });
   const [showPasswords, setShowPasswords] = useState({});
   const { enqueueSnackbar } = useSnackbar();
-  const { registeredUsers, registerUser, deleteUserAccount, toggleUserStatus, toggleUserRole } = useAuth();
+  const { registeredUsers, registerUser, deleteUserAccount, toggleUserStatus, toggleUserRole, changeUserRole } = useAuth();
 
   const toggleShowPassword = (id) => {
     setShowPasswords((prev) => ({
@@ -1048,6 +1048,22 @@ function UserManagement() {
     }
     setDeleteConfirm({ open: false, targetId: null, targetName: "" });
   };
+
+  const { user } = useAuth();
+  const isAdmin = user?.role === "admin" || !user?.role || (user?.email && user.email.includes("admin"));
+
+  if (!isAdmin) {
+    return (
+      <Paper sx={{ p: 4, textAlign: "center", borderRadius: "16px", backgroundColor: "rgba(15, 23, 42, 0.4)", border: "1px solid rgba(255, 255, 255, 0.06)" }}>
+        <Typography variant="h6" color="#f87171" fontWeight={700} gutterBottom>
+          🔒 User Role Management Restricted
+        </Typography>
+        <Typography variant="body2" color="#94a3b8">
+          Only Super Admin accounts can manage and assign user permission roles. Your current role is <strong>{user?.role?.toUpperCase()}</strong>.
+        </Typography>
+      </Paper>
+    );
+  }
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
