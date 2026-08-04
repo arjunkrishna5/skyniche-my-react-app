@@ -7,10 +7,12 @@ const path = require('path')
 const authRoutes = require("./routes/auth");
 const userRoutes = require('./routes/users');
 const productRoutes = require('./routes/products');
+const roleRoutes = require('./routes/roles');
 
 const sequelize = require("./config/dbconnection");
 const User = require("./models/users");
 const Product = require("./models/Product");
+const Role = require("./models/Role");
 
 const allowedOrigins = ['http://localhost:5173', 'http://localhost:3000', "http://192.168.1.16:3000", 'http://localhost:3001'];
 
@@ -50,6 +52,7 @@ fastify.register(require('@fastify/static'), {
 authRoutes.forEach((route) => fastify.route(route));
 userRoutes.forEach((route) => fastify.route(route));
 productRoutes.forEach((route) => fastify.route(route));
+fastify.register(roleRoutes);
 
 // Port
 const PORT = process.env.PORT || 4000;

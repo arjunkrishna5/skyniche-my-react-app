@@ -1,5 +1,8 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
+import axios from "axios";
 import { createTheme } from "@mui/material/styles";
+
+const API_BASE = "http://localhost:4000";
 import {
   Dashboard as DashboardIcon,
   ShoppingCart as ShoppingCartIcon,
@@ -60,6 +63,9 @@ import {
   FormControl,
   InputLabel,
   Select,
+  Checkbox,
+  FormControlLabel,
+  FormGroup,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 
@@ -1012,6 +1018,54 @@ function UserManagement() {
     );
   }, [registeredUsers, search]);
 
+  const [openRoleModal, setOpenRoleModal] = useState(false);
+  const [newRoleName, setNewRoleName] = useState("");
+  const [selectedPermissions, setSelectedPermissions] = useState({
+    view_products: true,
+    add_products: false,
+    edit_products: false,
+    delete_products: false,
+    view_orders: true,
+    update_orders: false,
+    manage_users: false,
+    view_analytics: false,
+  });
+
+  const [customRolesList, setCustomRolesList] = useState([]);
+
+  useEffect(() => {
+    const fetchCustomRoles = async () => {
+      try {
+        const res = await axios.post(`${API_BASE}/webservices/roles/get-all-roles`);
+        if (res.data?.data) {
+          setCustomRolesList(res.data.data);
+        }
+      } catch (err) {}
+    };
+    fetchCustomRoles();
+  }, []);
+
+  const handleSaveCustomRole = async () => {
+    if (!newRoleName.trim()) return;
+    const permissionsArray = Object.keys(selectedPermissions).filter((k) => selectedPermissions[k]);
+
+    try {
+      const res = await axios.post(`${API_BASE}/webservices/roles/add-role`, {
+        role_name: newRoleName.trim(),
+        permissions: permissionsArray,
+      });
+
+      if (res.data?.status === 1) {
+        setCustomRolesList((prev) => [...prev, res.data.data]);
+        enqueueSnackbar(`Custom Role "${newRoleName.trim()}" created successfully!`, { variant: "success", autoHideDuration: 1500 });
+        setOpenRoleModal(false);
+        setNewRoleName("");
+      }
+    } catch (err) {
+      enqueueSnackbar(err.response?.data?.message || "Failed to create custom role", { variant: "error", autoHideDuration: 1500 });
+    }
+  };
+
   const handleOpenModal = () => setOpenModal(true);
   const handleCloseModal = () => {
     setOpenModal(false);
@@ -1094,27 +1148,50 @@ function UserManagement() {
           }}
         />
 
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={handleOpenModal}
-          sx={{
-            backgroundColor: "#2dd4bf",
-            color: "#090d16",
-            fontWeight: 800,
-            textTransform: "none",
-            borderRadius: "10px",
-            px: 2.5,
-            py: 1,
-            boxShadow: "0 4px 15px rgba(45, 212, 191, 0.25)",
-            "&:hover": {
-              backgroundColor: "#0d9488",
-              color: "white",
-            },
-          }}
-        >
-          Add User Account
-        </Button>
+        <Box display="flex" gap={1.5}>
+          <Button
+            variant="outlined"
+            startIcon={<AdminIcon />}
+            onClick={() => setOpenRoleModal(true)}
+            sx={{
+              color: "#2dd4bf",
+              borderColor: "rgba(45, 212, 191, 0.3)",
+              fontWeight: 700,
+              textTransform: "none",
+              borderRadius: "10px",
+              px: 2,
+              py: 1,
+              "&:hover": {
+                borderColor: "#2dd4bf",
+                backgroundColor: "rgba(45, 212, 191, 0.08)",
+              },
+            }}
+          >
+            Create Custom Role
+          </Button>
+
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={handleOpenModal}
+            sx={{
+              backgroundColor: "#2dd4bf",
+              color: "#090d16",
+              fontWeight: 800,
+              textTransform: "none",
+              borderRadius: "10px",
+              px: 2.5,
+              py: 1,
+              boxShadow: "0 4px 15px rgba(45, 212, 191, 0.25)",
+              "&:hover": {
+                backgroundColor: "#0d9488",
+                color: "white",
+              },
+            }}
+          >
+            Add User Account
+          </Button>
+        </Box>
       </Box>
 
       {/* User Master Table */}
@@ -1243,6 +1320,11 @@ function UserManagement() {
                             <MenuItem value="editor">✏️ Editor (Read & Edit)</MenuItem>
                             <MenuItem value="viewer">👁️ Viewer (Read Only)</MenuItem>
                             <MenuItem value="customer">👤 Customer</MenuItem>
+                            {customRolesList.map((r) => (
+                              <MenuItem key={r.id} value={r.role_name.toLowerCase()}>
+                                ✨ {r.role_name}
+                              </MenuItem>
+                            ))}
                           </Select>
                         </FormControl>
                       </TableCell>
@@ -1454,6 +1536,92 @@ function UserManagement() {
             }}
           >
             Yes, Delete Account
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Create Custom Role Modal */}
+      <Dialog
+        open={openRoleModal}
+        onClose={() => setOpenRoleModal(false)}
+        PaperProps={{
+          sx: {
+            backgroundColor: "#0e1626",
+            color: "white",
+            borderRadius: "16px",
+            border: "1px solid rgba(45, 212, 191, 0.3)",
+            minWidth: { xs: "90%", sm: "500px" },
+          },
+        }}
+      >
+        <DialogTitle sx={{ fontWeight: 800, color: "#2dd4bf" }}>
+          ✨ Create Custom Role & Permissions
+        </DialogTitle>
+        <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2, pt: 2 }}>
+          <TextField
+            label="Role Name"
+            placeholder="e.g. Inventory Assistant, Support Specialist"
+            value={newRoleName}
+            onChange={(e) => setNewRoleName(e.target.value)}
+            fullWidth
+            size="small"
+            sx={{
+              mt: 1,
+              "& .MuiOutlinedInput-root": { color: "white", borderRadius: "10px" },
+              "& .MuiInputLabel-root": { color: "#94a3b8" },
+            }}
+          />
+
+          <Typography variant="subtitle2" color="#2dd4bf" fontWeight={700} mt={1}>
+            Tick Allowed Permissions for This Role:
+          </Typography>
+
+          <FormGroup sx={{ gap: 0.5 }}>
+            <Typography variant="caption" color="#64748b" fontWeight={700} mt={1}>📦 PRODUCTS & INVENTORY</Typography>
+            <FormControlLabel
+              control={<Checkbox checked={selectedPermissions.view_products} onChange={(e) => setSelectedPermissions((p) => ({ ...p, view_products: e.target.checked }))} sx={{ color: "#2dd4bf", "&.Mui-checked": { color: "#2dd4bf" } }} />}
+              label="View Products Catalog"
+            />
+            <FormControlLabel
+              control={<Checkbox checked={selectedPermissions.add_products} onChange={(e) => setSelectedPermissions((p) => ({ ...p, add_products: e.target.checked }))} sx={{ color: "#2dd4bf", "&.Mui-checked": { color: "#2dd4bf" } }} />}
+              label="Add Products & Categories (+ Add Product Button)"
+            />
+            <FormControlLabel
+              control={<Checkbox checked={selectedPermissions.edit_products} onChange={(e) => setSelectedPermissions((p) => ({ ...p, edit_products: e.target.checked }))} sx={{ color: "#2dd4bf", "&.Mui-checked": { color: "#2dd4bf" } }} />}
+              label="Edit Product Stock & Prices"
+            />
+            <FormControlLabel
+              control={<Checkbox checked={selectedPermissions.delete_products} onChange={(e) => setSelectedPermissions((p) => ({ ...p, delete_products: e.target.checked }))} sx={{ color: "#2dd4bf", "&.Mui-checked": { color: "#2dd4bf" } }} />}
+              label="Delete Products (Trash Can Icon)"
+            />
+
+            <Divider sx={{ my: 1, borderColor: "rgba(255, 255, 255, 0.08)" }} />
+
+            <Typography variant="caption" color="#64748b" fontWeight={700}>🛒 ORDERS & SHIPPING</Typography>
+            <FormControlLabel
+              control={<Checkbox checked={selectedPermissions.view_orders} onChange={(e) => setSelectedPermissions((p) => ({ ...p, view_orders: e.target.checked }))} sx={{ color: "#2dd4bf", "&.Mui-checked": { color: "#2dd4bf" } }} />}
+              label="View Customer Orders"
+            />
+            <FormControlLabel
+              control={<Checkbox checked={selectedPermissions.update_orders} onChange={(e) => setSelectedPermissions((p) => ({ ...p, update_orders: e.target.checked }))} sx={{ color: "#2dd4bf", "&.Mui-checked": { color: "#2dd4bf" } }} />}
+              label="Update Order Status (Processing -> Shipped -> Delivered)"
+            />
+
+            <Divider sx={{ my: 1, borderColor: "rgba(255, 255, 255, 0.08)" }} />
+
+            <Typography variant="caption" color="#64748b" fontWeight={700}>👥 SYSTEM & USERS</Typography>
+            <FormControlLabel
+              control={<Checkbox checked={selectedPermissions.manage_users} onChange={(e) => setSelectedPermissions((p) => ({ ...p, manage_users: e.target.checked }))} sx={{ color: "#2dd4bf", "&.Mui-checked": { color: "#2dd4bf" } }} />}
+              label="Manage User Accounts & Roles"
+            />
+          </FormGroup>
+        </DialogContent>
+        <DialogActions sx={{ p: 2.5 }}>
+          <Button onClick={() => setOpenRoleModal(false)} sx={{ color: "#64748b", textTransform: "none", fontWeight: 600 }}>
+            Cancel
+          </Button>
+          <Button onClick={handleSaveCustomRole} variant="contained" sx={{ backgroundColor: "#2dd4bf", color: "#090d16", fontWeight: 800, textTransform: "none", borderRadius: "10px", px: 3, "&:hover": { backgroundColor: "#0d9488", color: "white" } }}>
+            Save Custom Role
           </Button>
         </DialogActions>
       </Dialog>
