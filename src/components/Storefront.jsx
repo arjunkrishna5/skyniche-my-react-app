@@ -251,7 +251,7 @@ export default function Storefront() {
 
               {isAuthenticated ? (
                 <Box display="flex" alignItems="center" gap={1.5}>
-                  {(user?.role === "admin" || user?.role === "editor" || user?.role === "viewer") && (
+                  {(user?.role && user?.role?.toLowerCase() !== "customer") && (
                     <Button
                       variant="outlined"
                       onClick={() => navigate("/dashboard")}

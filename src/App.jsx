@@ -17,14 +17,14 @@ const StaffRoute = ({ children }) => {
   const { isAuthenticated, user } = useAuth();
   if (!isAuthenticated) return <Navigate to="/login" replace />;
   const role = user?.role?.toLowerCase();
-  const isStaff = role === "admin" || role === "editor" || role === "viewer" || (user?.email && user.email.includes("admin"));
+  const isStaff = role && role !== "customer";
   if (!isStaff) return <Navigate to="/shop" replace />;
   return children;
 };
 
 function App() {
   const { isAuthenticated, user } = useAuth();
-  const isStaff = user?.role?.toLowerCase() === "admin" || user?.role?.toLowerCase() === "editor" || user?.role?.toLowerCase() === "viewer";
+  const isStaff = user?.role?.toLowerCase() && user?.role?.toLowerCase() !== "customer";
 
   return (
     <ProductProvider>

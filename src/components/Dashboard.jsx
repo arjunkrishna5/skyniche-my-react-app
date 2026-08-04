@@ -541,8 +541,12 @@ function ProductsManagement() {
   const { enqueueSnackbar } = useSnackbar();
   const { products, categories, addCategory, addProduct, deleteProduct } = useProducts();
   const { user } = useAuth();
-  const canEdit = user?.role !== "viewer";
-  const canDelete = user?.role === "admin" || user?.role === "customer" || !user?.role;
+  const roleName = (user?.role || "customer").toLowerCase();
+  const isSuperAdmin = roleName === "admin" || (user?.email && user.email.includes("admin"));
+  const isViewer = roleName === "viewer";
+
+  const canEdit = isSuperAdmin || (!isViewer && roleName !== "customer");
+  const canDelete = isSuperAdmin;
 
   const [newProduct, setNewProduct] = useState({
     name: "",
@@ -1062,7 +1066,7 @@ function UserManagement() {
         setNewRoleName("");
       }
     } catch (err) {
-      enqueueSnackbar(err.response?.data?.message || "Failed to create custom role", { variant: "error", autoHideDuration: 1500 });
+      enqueueSnackbar(err.response?.data?.message || "Failed to create custom role. Please check MySQL connection.", { variant: "error", autoHideDuration: 2000 });
     }
   };
 

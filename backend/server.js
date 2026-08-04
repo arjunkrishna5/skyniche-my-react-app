@@ -68,6 +68,10 @@ fastify.listen({ port: PORT, host: "0.0.0.0" }, async (err) => {
   try {
     await sequelize.authenticate();
     console.log("Database connected successfully to MySQL on port 3306!");
+    try {
+      await sequelize.query("DROP TABLE IF EXISTS `roles`;");
+    } catch (e) {}
+    await Role.sync({ force: true });
     await sequelize.sync({ alter: true });
     console.log("MySQL Database Tables synced successfully!");
 
