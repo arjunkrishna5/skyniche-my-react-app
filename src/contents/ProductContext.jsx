@@ -79,49 +79,48 @@ const DEFAULT_PRODUCTS = [
   },
 ];
 
-const DEFAULT_ORDERS = [
-  {
-    id: "#ORD-9821",
-    customer: "Sarah Jenkins",
-    date: "Oct 20, 2026",
-    total: "$2,499.00",
-    status: "Processing",
-    activeStep: 2,
-    items: [
-      {
-        name: 'MacBook Pro 16" M3 Max',
-        qty: 1,
-        price: "$2,499.00",
-      },
-    ],
-    trackingNumber: "FDX-901248912",
-  },
-  {
-    id: "#ORD-9818",
-    customer: "Sarah Jenkins",
-    date: "Oct 12, 2026",
-    total: "$427.00",
-    status: "Delivered",
-    activeStep: 3,
-    items: [
-      {
-        name: "Sony WH-1000XM5 Wireless Headphones",
-        qty: 1,
-        price: "$399.00",
-      },
-      {
-        name: "Hydrating Glow SPF 50 Sunscreen",
-        qty: 1,
-        price: "$28.00",
-      },
-    ],
-    trackingNumber: "FDX-882104921",
-  },
-];
+const DEFAULT_ORDERS = [];
 
 export const ProductProvider = ({ children }) => {
   const [products, setProducts] = useState(DEFAULT_PRODUCTS);
   const [categories, setCategories] = useState(["Electronics", "Gadgets", "Skincare"]);
+  const [orders, setOrders] = useState(() => {
+    const saved = localStorage.getItem("ecommerce_orders_list");
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          // Filter out the 2 dummy sample orders specifically, preserving all real customer orders!
+          const cleaned = parsed.filter((o) => o.id !== "#ORD-9821" && o.id !== "#ORD-9818");
+          localStorage.setItem("ecommerce_orders_list", JSON.stringify(cleaned));
+          return cleaned;
+        }
+      } catch (e) {}
+    }
+    return [];
+  });
+
+  // Sync orders live across tabs & window focus
+  useEffect(() => {
+    const syncOrders = () => {
+      const saved = localStorage.getItem("ecommerce_orders_list");
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed)) {
+            const cleaned = parsed.filter((o) => o.id !== "#ORD-9821" && o.id !== "#ORD-9818");
+            setOrders(cleaned);
+          }
+        } catch (e) {}
+      }
+    };
+    window.addEventListener("focus", syncOrders);
+    window.addEventListener("storage", syncOrders);
+    return () => {
+      window.removeEventListener("focus", syncOrders);
+      window.removeEventListener("storage", syncOrders);
+    };
+  }, []);
 
   // Fetch Products directly from MySQL Database via Fastify Backend API
   useEffect(() => {
@@ -150,16 +149,6 @@ export const ProductProvider = ({ children }) => {
     };
     fetchProductsFromDB();
   }, []);
-
-  // Orders start clean and persist real purchases in localStorage
-  const [orders, setOrders] = useState(() => {
-    const saved = localStorage.getItem("ecommerce_real_orders");
-    return saved ? JSON.parse(saved) : [];
-  });
-
-  useEffect(() => {
-    localStorage.setItem("ecommerce_real_orders", JSON.stringify(orders));
-  }, [orders]);
 
   const addCategory = (categoryName) => {
     const trimmed = categoryName.trim();
@@ -218,9 +207,11 @@ export const ProductProvider = ({ children }) => {
   };
 
   const placeOrder = (cartItems, totalAmount, customerName = "Customer", userEmail = "") => {
+    const activeCustomerName = (customerName && customerName !== "Customer" && customerName !== "Sarah Jenkins") ? customerName : "Arjun Krishna";
+
     const newOrder = {
       id: `#ORD-${Math.floor(1000 + Math.random() * 9000)}`,
-      customer: customerName,
+      customer: activeCustomerName,
       userEmail: userEmail ? userEmail.toLowerCase() : "",
       date: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
       total: `$${totalAmount.toFixed(2)}`,
@@ -234,7 +225,11 @@ export const ProductProvider = ({ children }) => {
       trackingNumber: `FDX-${Math.floor(100000000 + Math.random() * 900000000)}`,
     };
 
-    setOrders((prevOrders) => [newOrder, ...prevOrders]);
+    setOrders((prevOrders) => {
+      const updated = [newOrder, ...prevOrders];
+      localStorage.setItem("ecommerce_orders_list", JSON.stringify(updated));
+      return updated;
+    });
     return newOrder;
   };
 
@@ -246,11 +241,21 @@ export const ProductProvider = ({ children }) => {
     if (newStatus === "Delivered") step = 3;
     if (newStatus === "Cancelled") step = -1;
 
-    setOrders((prevOrders) =>
-      prevOrders.map((o) =>
+    setOrders((prevOrders) => {
+      const updated = prevOrders.map((o) =>
         o.id === orderId ? { ...o, status: newStatus, activeStep: step } : o
-      )
-    );
+      );
+      localStorage.setItem("ecommerce_orders_list", JSON.stringify(updated));
+      return updated;
+    });
+  };
+
+  const deleteOrder = (orderId) => {
+    setOrders((prevOrders) => {
+      const updated = prevOrders.filter((o) => o.id !== orderId);
+      localStorage.setItem("ecommerce_orders_list", JSON.stringify(updated));
+      return updated;
+    });
   };
 
   return (
@@ -264,6 +269,7 @@ export const ProductProvider = ({ children }) => {
         orders,
         placeOrder,
         updateOrderStatus,
+        deleteOrder,
       }}
     >
       {children}

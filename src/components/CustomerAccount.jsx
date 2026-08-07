@@ -79,8 +79,8 @@ export default function CustomerAccount() {
 
   // Profile Form State
   const [profileData, setProfileData] = useState({
-    name: user?.name || "Sarah Jenkins",
-    email: user?.email || "sarah.j@example.com",
+    name: user?.name || "Arjun Krishna",
+    email: user?.email || "arjunkrishna70342@gmail.com",
     phone: "+1 (555) 234-5678",
     address: "742 Evergreen Terrace",
     city: "Springfield",
@@ -296,13 +296,13 @@ export default function CustomerAccount() {
           <Box display="flex" flexDirection="column" gap={3.5}>
             {(() => {
               const userOrders = orders.filter((o) => {
-                if (user?.email && o.userEmail) {
-                  return o.userEmail.toLowerCase() === user.email.toLowerCase();
+                if (user?.email && o.userEmail && o.userEmail.toLowerCase() === user.email.toLowerCase()) {
+                  return true;
                 }
-                if (user?.name && o.customer) {
-                  return o.customer.toLowerCase() === user.name.toLowerCase();
+                if (user?.name && o.customer && o.customer.toLowerCase() === user.name.toLowerCase()) {
+                  return true;
                 }
-                return true;
+                return false;
               });
 
               if (userOrders.length === 0) {

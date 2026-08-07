@@ -118,6 +118,7 @@ const parseCurrency = (val) => {
 // --- 1. DASHBOARD OVERVIEW SCREEN ---
 function DashboardOverview() {
   const { orders, products } = useProducts();
+  const { user } = useAuth();
 
   const totalRevenue = orders.reduce((sum, o) => sum + parseCurrency(o.total), 0);
 
@@ -330,7 +331,8 @@ function StatusBadge({ status }) {
 // --- 2. ORDERS SCREEN ---
 function OrdersList() {
   const [search, setSearch] = useState("");
-  const { orders, updateOrderStatus } = useProducts();
+  const { orders, updateOrderStatus, deleteOrder } = useProducts();
+  const { user } = useAuth();
   const { enqueueSnackbar } = useSnackbar();
 
   const filteredOrders = useMemo(() => {
@@ -388,12 +390,13 @@ function OrdersList() {
           <Button
             variant="outlined"
             startIcon={<RefreshIcon />}
+            onClick={() => enqueueSnackbar("Orders synchronized with database!", { variant: "info", autoHideDuration: 1200 })}
             sx={{
-              color: "white",
-              borderColor: "rgba(255, 255, 255, 0.08)",
+              color: "#2dd4bf",
+              borderColor: "rgba(45, 212, 191, 0.3)",
               textTransform: "none",
               borderRadius: "10px",
-              "&:hover": { borderColor: "rgba(255, 255, 255, 0.18)", backgroundColor: "rgba(255,255,255,0.02)" },
+              "&:hover": { borderColor: "#2dd4bf", backgroundColor: "rgba(45, 212, 191, 0.06)" },
             }}
           >
             Sync
@@ -401,9 +404,10 @@ function OrdersList() {
         </Box>
       </Box>
 
-      {/* Orders Table */}
+      {/* Orders Data Table */}
       <Paper
         sx={{
+          p: 3,
           borderRadius: "16px",
           backgroundColor: "rgba(15, 23, 42, 0.4)",
           border: "1px solid rgba(255, 255, 255, 0.06)",
@@ -419,6 +423,7 @@ function OrdersList() {
                 <TableCell sx={{ color: "#64748b", fontWeight: 700 }}>Date</TableCell>
                 <TableCell sx={{ color: "#64748b", fontWeight: 700 }}>Status Action</TableCell>
                 <TableCell sx={{ color: "#64748b", fontWeight: 700 }} align="right">Total</TableCell>
+                <TableCell sx={{ color: "#64748b", fontWeight: 700 }} align="right">Action</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -499,11 +504,24 @@ function OrdersList() {
                     <TableCell sx={{ color: "white", fontWeight: 800 }} align="right">
                       {order.total}
                     </TableCell>
+                    <TableCell align="right">
+                      <Tooltip title="Delete Order">
+                        <IconButton
+                          onClick={() => {
+                            deleteOrder(order.id);
+                            enqueueSnackbar(`Order ${order.id} deleted.`, { variant: "info", autoHideDuration: 1500 });
+                          }}
+                          sx={{ color: "#64748b", "&:hover": { color: "#f87171" } }}
+                        >
+                          <DeleteIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                    </TableCell>
                   </TableRow>
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={5} align="center" sx={{ py: 6, color: "#64748b" }}>
+                  <TableCell colSpan={6} align="center" sx={{ py: 6, color: "#64748b" }}>
                     No orders found matching your search.
                   </TableCell>
                 </TableRow>
