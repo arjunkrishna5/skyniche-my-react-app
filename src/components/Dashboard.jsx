@@ -1012,6 +1012,7 @@ function UserManagement() {
   const [newUser, setNewUser] = useState({
     name: "",
     email: "",
+    password: "",
     role: "Customer",
   });
 
@@ -1027,6 +1028,7 @@ function UserManagement() {
 
   const [openRoleModal, setOpenRoleModal] = useState(false);
   const [newRoleName, setNewRoleName] = useState("");
+  const [newRoleDescription, setNewRoleDescription] = useState("");
   const [selectedPermissions, setSelectedPermissions] = useState({
     view_products: true,
     add_products: false,
@@ -1059,6 +1061,7 @@ function UserManagement() {
     try {
       const res = await axios.post(`${API_BASE}/webservices/roles/add-role`, {
         role_name: newRoleName.trim(),
+        description: newRoleDescription.trim(),
         permissions: permissionsArray,
       });
 
@@ -1067,6 +1070,7 @@ function UserManagement() {
         enqueueSnackbar(`Custom Role "${newRoleName.trim()}" created successfully!`, { variant: "success", autoHideDuration: 1500 });
         setOpenRoleModal(false);
         setNewRoleName("");
+        setNewRoleDescription("");
       }
     } catch (err) {
       enqueueSnackbar(err.response?.data?.message || "Failed to create custom role. Please check MySQL connection.", { variant: "error", autoHideDuration: 2000 });
@@ -1076,12 +1080,12 @@ function UserManagement() {
   const handleOpenModal = () => setOpenModal(true);
   const handleCloseModal = () => {
     setOpenModal(false);
-    setNewUser({ name: "", email: "", role: "Customer" });
+    setNewUser({ name: "", email: "", password: "", role: "Customer" });
   };
 
   const handleAddUser = () => {
     if (!newUser.name || !newUser.email) return;
-    registerUser(newUser.name, newUser.email, "123456");
+    registerUser(newUser.name, newUser.email, newUser.password || "123456", newUser.role);
     handleCloseModal();
     enqueueSnackbar(`User account "${newUser.email}" added!`, { variant: "success", autoHideDuration: 1000 });
   };
@@ -1458,6 +1462,26 @@ function UserManagement() {
             }}
           />
 
+          <TextField
+            label="Password"
+            placeholder="e.g. SecretPass123"
+            type="password"
+            fullWidth
+            value={newUser.password}
+            onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
+            sx={{
+              "& .MuiOutlinedInput-root": {
+                color: "white",
+                backgroundColor: "rgba(255, 255, 255, 0.02)",
+                borderRadius: "10px",
+                "& fieldset": { borderColor: "rgba(255, 255, 255, 0.1)" },
+                "&.Mui-focused fieldset": { borderColor: "#2dd4bf" },
+              },
+              "& .MuiInputLabel-root": { color: "#64748b" },
+              "& .MuiInputLabel-root.Mui-focused": { color: "#2dd4bf" },
+            }}
+          />
+
           <FormControl fullWidth>
             <InputLabel sx={{ color: "#64748b", "&.Mui-focused": { color: "#2dd4bf" } }}>Account Role</InputLabel>
             <Select
@@ -1574,6 +1598,21 @@ function UserManagement() {
             size="small"
             sx={{
               mt: 1,
+              "& .MuiOutlinedInput-root": { color: "white", borderRadius: "10px" },
+              "& .MuiInputLabel-root": { color: "#94a3b8" },
+            }}
+          />
+
+          <TextField
+            label="Role Description"
+            placeholder="e.g. Responsible for inventory management, updating stock, and processing customer orders."
+            value={newRoleDescription}
+            onChange={(e) => setNewRoleDescription(e.target.value)}
+            fullWidth
+            multiline
+            rows={2}
+            size="small"
+            sx={{
               "& .MuiOutlinedInput-root": { color: "white", borderRadius: "10px" },
               "& .MuiInputLabel-root": { color: "#94a3b8" },
             }}

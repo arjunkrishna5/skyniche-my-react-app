@@ -8,6 +8,7 @@ async function roleRoutes(fastify, options) {
       const parsedRoles = roles.map((r) => ({
         id: r.id,
         role_name: r.role_name,
+        description: r.description || "",
         permissions: JSON.parse(r.permissions || "[]"),
       }));
       return reply.send({ status: 1, data: parsedRoles });
@@ -20,7 +21,7 @@ async function roleRoutes(fastify, options) {
   // Add a new custom role
   fastify.post("/webservices/roles/add-role", async (req, reply) => {
     try {
-      const { role_name, permissions } = req.body;
+      const { role_name, description, permissions } = req.body;
       if (!role_name) {
         return reply.status(400).send({ status: 0, message: "Role name is required" });
       }
@@ -32,6 +33,7 @@ async function roleRoutes(fastify, options) {
 
       const newRole = await Role.create({
         role_name: role_name.trim(),
+        description: description ? description.trim() : "",
         permissions: JSON.stringify(permissions || []),
       });
 
@@ -41,6 +43,7 @@ async function roleRoutes(fastify, options) {
         data: {
           id: newRole.id,
           role_name: newRole.role_name,
+          description: newRole.description,
           permissions: permissions || [],
         },
       });

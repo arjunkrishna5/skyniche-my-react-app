@@ -47,11 +47,16 @@ export const AuthProvider = ({ children }) => {
         setRegisteredUsers((prevUsers) => {
           const formatted = userList.map((u) => {
             const existing = prevUsers.find((p) => p.email.toLowerCase() === u.email.toLowerCase());
+            const isHash = (str) => typeof str === "string" && (str.startsWith("$2b$") || str.startsWith("$2a$") || str.startsWith("$2y$"));
+            const displayPass = (existing?.password && !isHash(existing.password))
+              ? existing.password
+              : (u.password && !isHash(u.password) ? u.password : (u.email.includes("admin") ? "admin123" : "password123"));
+
             return {
               id: `USER-${u.id}`,
               name: u.name,
               email: u.email,
-              password: existing?.password || u.password || (u.email.includes("admin") ? "admin123" : "password123"),
+              password: displayPass,
               role: u.role || (u.email.includes("admin") ? "admin" : "customer"),
               joined: u.timestamp
                 ? new Date(u.timestamp * 1000).toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" })
@@ -169,17 +174,17 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const registerUser = async (name, email, password) => {
+  const registerUser = async (name, email, password, role) => {
     try {
       const cleanEmail = email.trim().toLowerCase();
-      const isAdmin = cleanEmail.includes("admin");
+      const userRole = (role || (cleanEmail.includes("admin") ? "admin" : "customer")).toLowerCase();
 
       const newUser = {
         id: `USER-${Math.floor(100 + Math.random() * 900)}`,
         name: name || cleanEmail.split("@")[0],
         email: cleanEmail,
-        password: password,
-        role: isAdmin ? "admin" : "customer",
+        password: password || '123456',
+        role: userRole,
         joined: new Date().toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" }),
         status: "Active",
       };
@@ -190,15 +195,14 @@ export const AuthProvider = ({ children }) => {
           name: newUser.name,
           email: newUser.email,
           password: password || '123456',
+          role: userRole,
         });
       } catch (dbErr) {
         console.warn("Backend MySQL sync skipped (server offline or already exists):", dbErr.message);
       }
 
-      // 2. Save only explicitly registered users to state & localStorage
+      // 2. Save explicitly registered users to state & localStorage
       setRegisteredUsers((prev) => [newUser, ...prev.filter((u) => u.email.toLowerCase() !== cleanEmail)]);
-      setUser(newUser);
-      setIsAuthenticated(true);
       return { success: true, user: newUser };
     } catch (err) {
       console.error("Registration failed:", err);
